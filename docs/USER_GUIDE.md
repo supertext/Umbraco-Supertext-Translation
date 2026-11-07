@@ -109,3 +109,7 @@ Your administrator decides per language whether Supertext writes formally (*Sie*
 | *Supertext offers no formal or informal tone for this language* | The formal/informal setting for that language isn't available at Supertext. Ask your administrator to set it to the default tone. |
 | *The document type … does not vary by culture* | This kind of page has only one version for all languages. Your administrator can enable *Vary by culture* for it. |
 | You don't see the button | You need permission to update the page. Ask your administrator. |
+
+## Support
+
+Questions, problems or ideas: use the [Supertext support form](https://integrations.supertext.com/en/support?platform=umbraco). Mention the version of Umbraco and of the plugin, what you did and what you expected; an error message helps a lot. You get an answer by email, in your language.
