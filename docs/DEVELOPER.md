@@ -179,7 +179,35 @@ cd Tests/Docs && npm install && node stand-in.mjs &
 BASE_URL=http://127.0.0.1:8095 DEMO_EDITOR_EMAIL=… DEMO_EDITOR_PASSWORD=… DEMO_ADMIN_EMAIL=… DEMO_ADMIN_PASSWORD=… npm run screenshots
 ```
 
-`ONLY=dashboard npm run screenshots` takes only the Settings › Supertext dashboard (needs no fresh demo): its *Languages* box as `supertext-languages.png` (used in the installation guide) and the configuration box as `supertext-dashboard.png` (not committed: it shows the local stand-in's endpoint and ping URL). New texts in the flow: run the stand-in with `STAND_IN_DUMP=<dir>` and translate what it writes to `<dir>/de-CH.json` into `sample-de.json`. `CHROMIUM_PATH` points Playwright at an installed Chromium.
+`ONLY=dashboard npm run screenshots` takes only the Settings › Supertext dashboard (needs no fresh demo): its *Languages* box as `supertext-languages.png` (used in the installation guide) and the configuration box as `supertext-dashboard.png` (not committed: it shows the local stand-in's endpoint and ping URL). New texts in the flow: run the stand-in with `STAND_IN_DUMP=<dir>` and translate what it writes to `<dir>/de-CH.json` into `sample-de.json`. `CHROMIUM_PATH` points Playwright at an installed Chromium. `STAND_IN_DELAY=<seconds>` keeps the stand-in's files `in_progress` that long (for the demo movie).
+
+## Demo movie
+
+`docs/images/demo.gif` (at the top of the README) is recorded by `Tests/Docs/movie.mjs` with Supertext's shared movie kit (`Tests/Docs/movie/movie-kit.mjs` and `assets/`: intro and outro cards, caption bar, cursor, cuts the waiting time; Inter under the SIL OFL, `assets/fonts/Inter-LICENSE.txt`). It shows, with a spoken line for every step (the GIF is silent), as the demo's editor: *Features* in English, **Translate with Supertext** with only German ticked, *Translate*, the waiting state, the German draft (*Funktionen*, opened through the workspace's language menu) and *Save and publish*. Run it against a **fresh** demo (Features must have no German yet) and the stand-in with a delay, so the waiting state is visible:
+
+```bash
+cd Tests/Docs && npm install && PORT=8765 STAND_IN_DELAY=8 node stand-in.mjs &   # files stay in_progress for 8 s
+# start the demo fresh (see Local development, with SUPERTEXT_REPORT_URL), then:
+pip install piper-tts                                   # the voice (once)
+BASE_URL=http://127.0.0.1:8095 DEMO_EDITOR_EMAIL=… DEMO_EDITOR_PASSWORD=… npm run movie
+```
+
+The MP4 is narrated with [Piper](https://pypi.org/project/piper-tts/) (`pip install piper-tts`): the kit's `say()` speaks each step's line, shows its caption and holds until the line is finished; the time spent making the speech is cut. The voice model (63 MB, pinned revision, checked by SHA-256) downloads itself once into `Tests/Docs/movie/voice/` (git-ignored; never commit it). Without Piper, or with `MOVIE_VOICE=0`, the movie is made silent with the captions only.
+
+Voice: Piper voice “alba” (en_GB), trained on a dataset from the University of Edinburgh's Centre for Speech Technology Research, CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+It needs `ffmpeg` and writes 1280×720 at 30 fps. The GIF (800 px, 12 fps, keep it under 3 MB) is committed; the MP4 isn't: it goes to `Tests/Docs/movie/out/Umbraco-Supertext-Translation.mp4` (git-ignored) or to `MOVIE_OUT`. `CHROMIUM_PATH` picks a Chromium as for the screenshots. Record it again when the dialog or the document workspace changes. The kit is the same in every Supertext plugin repo: don't restyle it here.
+
+### Install movie
+
+`Tests/Docs/movie-install.mjs` records the install and configuration movie with the same kit and voice (MP4 only, no GIF). It shows the install commands from `docs/INSTALLATION.md` in the kit's terminal (`git clone`, `dotnet pack`, `dotnet nuget add source`, `dotnet add package`, `SUPERTEXT_API_KEY` with the fake key `st-demo-0000-0000-0000`, `dotnet run`), then, as the demo's **administrator**: Settings › Languages, **Settings › Supertext** (key set, where to get a key, *Check API key*), the language mapping (German → *Swiss High German (de-CH)*, *Translation review* left off, *Save*), and where editors find *Translate with Supertext* (next to *Save and publish* and in the page's actions menu). Page loads are cut, and the dashboard's local stand-in and ping addresses are shown as `https://api.supertext.com/v1/` and `https://www.example.com/…`. Any demo whose package talks to the stand-in works (it needn't be fresh):
+
+```bash
+cd Tests/Docs && node stand-in.mjs &
+BASE_URL=http://127.0.0.1:8095 DEMO_ADMIN_EMAIL=… DEMO_ADMIN_PASSWORD=… npm run movie:install
+```
+
+The MP4 (about 100 s) goes to `Tests/Docs/movie/out/Umbraco-Supertext-Translation-install.mp4` (git-ignored) or to `MOVIE_OUT`; it isn't committed. Record it again when the install steps or Settings › Supertext change.
 
 ## Demo (Railway)
 

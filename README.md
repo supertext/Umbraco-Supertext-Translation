@@ -2,6 +2,8 @@
 
 Translate Umbraco pages into other languages with **Supertext AI**. Click **Translate with Supertext**, choose the languages, and Supertext translates the page name, text, rich text and the text inside block lists and block grids. The language versions are saved as drafts for you to review and publish.
 
+![Demo: an English page in Umbraco, Translate with Supertext into German, the waiting state, the German draft ready to review and publish](docs/images/demo.gif)
+
 Works with Umbraco 17 LTS and 18, .NET 10.
 
 ![The Translate with Supertext dialog in the Umbraco backoffice](docs/images/translate-dialog.png)
