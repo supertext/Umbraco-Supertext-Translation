@@ -43,10 +43,17 @@ public sealed class ContentTranslator(
 {
     private SupertextOptions Options => options.CurrentValue;
 
+    /// <summary>
+    /// Loads a document by key through <see cref="IContentServiceBase{TItem}"/>: Umbraco 18 removed
+    /// <c>IContentService.GetById(Guid)</c> (it is only on the base interface now), so a package built
+    /// against Umbraco 17 that calls it directly fails on 18 with MissingMethodException.
+    /// </summary>
+    private IContent? GetDocument(Guid key) => ((IContentServiceBase<IContent>)contentService).GetById(key);
+
     public async Task<IReadOnlyList<CultureTranslationResult>> TranslateAsync(
         Guid documentKey, string sourceCulture, IReadOnlyCollection<string> targetCultures, bool overwrite, int userId, CancellationToken ct = default)
     {
-        var content = contentService.GetById(documentKey) ?? throw new TranslationException("documentNotFound", "Document not found.");
+        var content = GetDocument(documentKey) ?? throw new TranslationException("documentNotFound", "Document not found.");
         if (!content.ContentType.VariesByCulture())
         {
             throw new TranslationException("invariantDocumentType", $"The document type \"{content.ContentType.Name}\" does not vary by culture, so it has no separate language versions to translate into.", [content.ContentType.Name ?? content.ContentType.Alias]);
@@ -190,7 +197,7 @@ public sealed class ContentTranslator(
     /// <exception cref="TranslationException">fileDocumentNotFound, invariantDocumentType, noSourceVersion, noLanguage, saveFailed, file errors</exception>
     public async Task<FileImportResult> ImportAsync(TranslationFile file, Guid documentKey, string sourceCulture, string targetCulture, bool includeChanged, bool overwrite, int userId)
     {
-        if (contentService.GetById(documentKey) is null)
+        if (GetDocument(documentKey) is null)
         {
             throw new TranslationException("fileDocumentNotFound", "The document this file was exported from no longer exists.");
         }
@@ -225,13 +232,13 @@ public sealed class ContentTranslator(
     /// <summary>The name of a document (in the culture if it has one), for the import summary.</summary>
     public string? DocumentName(Guid documentKey, string culture)
     {
-        var content = contentService.GetById(documentKey);
+        var content = GetDocument(documentKey);
         return content is null ? null : content.GetCultureName(culture) ?? content.Name;
     }
 
     private IContent LoadTranslatable(Guid documentKey, string sourceCulture)
     {
-        var content = contentService.GetById(documentKey) ?? throw new TranslationException("documentNotFound", "Document not found.");
+        var content = GetDocument(documentKey) ?? throw new TranslationException("documentNotFound", "Document not found.");
         if (!content.ContentType.VariesByCulture())
         {
             throw new TranslationException("invariantDocumentType", $"The document type \"{content.ContentType.Name}\" does not vary by culture, so it has no separate language versions to translate into.", [content.ContentType.Name ?? content.ContentType.Alias]);
@@ -431,7 +438,7 @@ public sealed class ContentTranslator(
     /// <summary>Languages a document can be translated into, for the dialog.</summary>
     public async Task<IReadOnlyList<(string IsoCode, string Name, bool IsDefault, bool Exists)>> GetLanguagesAsync(Guid documentKey)
     {
-        var content = contentService.GetById(documentKey) ?? throw new TranslationException("documentNotFound", "Document not found.");
+        var content = GetDocument(documentKey) ?? throw new TranslationException("documentNotFound", "Document not found.");
         var languages = await languageService.GetAllAsync();
         var settings = languageSettings.Current();
         return languages

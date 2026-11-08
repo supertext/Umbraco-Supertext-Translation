@@ -191,7 +191,7 @@ The public demo is a container built from `demo/Dockerfile`: Umbraco 17 LTS with
 | --- | --- |
 | `demo/Dockerfile` | `dotnet publish` of `demo/SupertextDemo` (SDK image), run on the ASP.NET image with `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true` |
 | `demo/entrypoint.sh` | Links `umbraco/Data` (SQLite), `umbraco/Logs` and `wwwroot/media` to the volume at `/data`; maps `DEMO_ADMIN_*` to the unattended install; sets `UmbracoApplicationUrl` from `APP_URL` or `RAILWAY_PUBLIC_DOMAIN` |
-| `demo/SupertextDemo/` | The Umbraco project: Umbraco 17.7, Clean 7.0.8, the package, `appsettings.json` (SQLite, unattended install, `ExcludedProperties: ["code"]`) |
+| `demo/SupertextDemo/` | The Umbraco project: Umbraco 17.8, Clean 7.0.8, the package, `appsettings.json` (SQLite, unattended install, `ExcludedProperties: ["code"]`) |
 | `demo/SupertextDemo/DemoSetup/DemoSetupService.cs` | On every start, once Umbraco runs: adds de-CH/fr-CH/it-CH, makes non-element document types and their text/rich-text/block-list properties vary by culture, moves composition values to en-US (Umbraco only moves values of the type's own properties), sets `/de` `/fr` `/it` on the home page, creates the demo accounts, and saves formal address for the three languages as Settings › Supertext would (only while nothing is saved there) |
 | `demo/SupertextDemo/Views/` | Clean's views, **committed**: Clean writes them only during its first-boot package migration, so a container restart would otherwise lose them |
 | `demo/.env.example` | All variables |
@@ -250,5 +250,5 @@ Publishing to NuGet stays manual: `dotnet pack src/Supertext.Umbraco.Translation
 - Media alt texts, dictionary items and tags are not translated.
 - *Export for translation* works on one page at a time (no bulk export yet). The docs have no screenshots of the export and import parts of the dialog yet (the local demo didn't start in the session that added them; `Tests/Docs/screenshots.mjs` should add them).
 - Human (professional) translation orders are not supported yet.
-- Tested on Umbraco 17.7 with the stand-in API; not yet against the live API or on Umbraco 18.
+- Tested with the stand-in API on Umbraco 17.8 and, with the package built against 17 as published, on Umbraco 18.3 (`Tests/Docs/screenshots.mjs` flow); not yet against the live API. The package is built against Umbraco 17 and the same DLL runs on 18, so it must only call members that exist in both: Umbraco 18 moved some members, so code that compiles against both can still fail at run time, e.g. `IContentService.GetById(Guid)` (only on `IContentServiceBase<IContent>` now; a call compiled against 17 fails on 18 with `MissingMethodException`). The demo stays on Umbraco 17; moving it to 18 also needs Clean 8 and updated views in `demo/SupertextDemo/Views/` (Umbraco 18 removed `BlockListItem.ContentUdi`).
 - The language mapping and tone are edited on Settings › Supertext; the other settings (API key, endpoint, version reports) are read from appsettings.json / the environment and only shown there. Editing those would add `afterSettingsSaved` reports.

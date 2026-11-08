@@ -8,7 +8,7 @@ For administrators setting up the package on an Umbraco site.
 
 | | |
 | --- | --- |
-| Umbraco | 17 LTS (tested), 18 (supported) |
+| Umbraco | 17 LTS and 18 (tested with 17.8 and 18.3) |
 | .NET | 10 |
 | Languages | At least two languages, and document types that **vary by culture** |
 | Supertext | An account with an API key — see [Set the API key](#2-set-the-api-key) |
