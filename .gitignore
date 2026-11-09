@@ -15,3 +15,7 @@ demo/SupertextDemo/wwwroot/
 demo/SupertextDemo/appsettings-schema*.json
 demo/SupertextDemo/appsettings.Development.json
 demo/SupertextDemo/appsettings.Local.json
+
+# E2E test (Tests/E2E): result pages of failed runs
+Tests/E2E/artifacts/
+Tests/Docs/stand-in.log

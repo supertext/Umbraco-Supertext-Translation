@@ -30,7 +30,7 @@ const union = (...rs) => {
 const shot = (page, name, clip) => page.screenshot({ path: `${OUT}/${name}.png`, ...(clip ? { clip } : {}) });
 
 async function login([user, password]) {
-  const page = await (await browser.newContext({ viewport: { width: 1400, height: 900 } })).newPage();
+  const page = await (await browser.newContext({ viewport: { width: 1400, height: 900 }, locale: 'en-US', timezoneId: 'Europe/Zurich' })).newPage();
   await page.goto(`${B}/umbraco`);
   await page.getByLabel(/Email/i).first().fill(user);
   await page.getByLabel(/Password/i).first().fill(password);
@@ -96,6 +96,12 @@ async function publishGerman(page, screenshot) {
 /** Settings › Supertext: configuration, API key check and version reports; the languages box (combo boxes) on its own. */
 async function dashboard() {
   const admin = await login(ADMIN);
+  // The key check's time changes with every run: show a fixed one, so the image only changes with the UI.
+  await admin.route('**/umbraco/management/api/v1/supertext/settings**', async (route) => {
+    const response = await route.fetch();
+    const body = (await response.text()).replace(/"checkedAt"\s*:\s*"[^"]*"/gi, '"checkedAt":"2026-10-01T07:30:00Z"');
+    await route.fulfill({ response, body });
+  });
   await admin.goto(`${B}/umbraco/section/settings/dashboard/supertext`);
   await admin.getByText('Send version information to Supertext').first().waitFor({ timeout: 30000 });
   await admin.getByRole('button', { name: 'Check API key' }).click();
