@@ -31,3 +31,80 @@ jobs:
         run: node Tests/Localization/check-keys.mjs
       - name: Demo entrypoint syntax
         run: sh -n demo/entrypoint.sh
+
+  # The package as published (built against the lowest supported Umbraco) in a fresh demo on
+  # Umbraco 17 LTS and on Umbraco 18: Tests/Docs/screenshots.mjs translates and publishes pages
+  # through the real backoffice against the stand-in API. Members Umbraco 18 moved only fail at
+  # run time (MissingMethodException), so building is not enough. See docs/DEVELOPER.md -> Tests.
+  runtime:
+    name: runtime (Umbraco ${{ matrix.umbraco }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - umbraco: '17.8.1'
+            clean: '7.0.8'
+          - umbraco: '18.3.1'
+            clean: '8.0.1'
+    env:
+      UMBRACO_VERSION: ${{ matrix.umbraco }}
+      CLEAN_VERSION: ${{ matrix.clean }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - name: Pack the package and build the demo against it
+        run: |
+          dotnet pack src/Supertext.Umbraco.Translation -c Release -o "$RUNNER_TEMP/packages" -p:Version=0.0.0-ci
+          dotnet build demo/SupertextDemo/SupertextDemo.csproj -c Release \
+            -p:UmbracoVersion="$UMBRACO_VERSION" -p:CleanVersion="$CLEAN_VERSION" \
+            -p:SupertextPackageVersion=0.0.0-ci -p:RestoreAdditionalProjectSources="$RUNNER_TEMP/packages"
+      - name: Start the stand-in API and the demo
+        env:
+          # Throwaway accounts of a demo that only lives in this job
+          DEMO_ADMIN_EMAIL: admin@example.com
+          DEMO_ADMIN_PASSWORD: Runtime12345!
+          DEMO_EDITOR_EMAIL: editor@example.com
+          DEMO_EDITOR_PASSWORD: Runtime12345!
+        run: |
+          (cd Tests/Docs && npm install --no-audit --no-fund && (node stand-in.mjs > "$RUNNER_TEMP/stand-in.log" 2>&1 &))
+          cd demo/SupertextDemo
+          Umbraco__CMS__Unattended__UnattendedUserEmail="$DEMO_ADMIN_EMAIL" \
+          Umbraco__CMS__Unattended__UnattendedUserPassword="$DEMO_ADMIN_PASSWORD" \
+          Umbraco__CMS__WebRouting__UmbracoApplicationUrl=http://127.0.0.1:8095 \
+          Umbraco__CMS__Global__UseHttps=false \
+          SUPERTEXT_API_KEY=test SUPERTEXT_API_ENDPOINT=http://127.0.0.1:8765/v1/ \
+          SUPERTEXT_REPORT_URL=http://127.0.0.1:8765/report \
+            nohup dotnet run --no-build -c Release --urls http://127.0.0.1:8095 > "$RUNNER_TEMP/demo.log" 2>&1 &
+          for _ in $(seq 1 60); do
+            if grep -qs 'setup complete' umbraco/Logs/*.json; then echo "Demo ready"; exit 0; fi
+            sleep 5
+          done
+          echo "::error::The demo did not finish its setup"; tail -50 "$RUNNER_TEMP/demo.log"; exit 1
+      - name: Translate and publish through the backoffice
+        working-directory: Tests/Docs
+        env:
+          BASE_URL: http://127.0.0.1:8095
+          DEMO_ADMIN_EMAIL: admin@example.com
+          DEMO_ADMIN_PASSWORD: Runtime12345!
+          DEMO_EDITOR_EMAIL: editor@example.com
+          DEMO_EDITOR_PASSWORD: Runtime12345!
+        run: |
+          CHROMIUM_PATH="$(command -v google-chrome || command -v chromium)" SCREENSHOTS_OUT="$RUNNER_TEMP/screenshots" \
+            sh -c 'mkdir -p "$SCREENSHOTS_OUT" && node screenshots.mjs'
+          curl -fsS -o /dev/null http://127.0.0.1:8095/de/funktionen/
+      - name: No missing members or errors from the package
+        if: always()
+        run: |
+          if grep -hs 'MissingMethodException\|MissingFieldException\|TypeLoadException' demo/SupertextDemo/umbraco/Logs/*.json; then
+            echo "::error::Umbraco $UMBRACO_VERSION: the package calls members this version doesn't have"; exit 1
+          fi
+          grep -hs '"@l":"Error"' demo/SupertextDemo/umbraco/Logs/*.json | cut -c1-600 || true

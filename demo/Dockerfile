@@ -1,4 +1,4 @@
-# Supertext Umbraco demo: Umbraco 17 LTS + Clean starter kit (EN, DE-CH, FR-CH, IT-CH) + this package.
+# Supertext Umbraco demo: Umbraco 18 + Clean 8 starter kit (EN, DE-CH, FR-CH, IT-CH) + this package.
 # Build context is the repository root:
 #   docker build -f demo/Dockerfile -t supertext-umbraco-demo .
 # State (SQLite database, media) lives in /data (mount a volume). See docs/DEVELOPER.md -> Demo.

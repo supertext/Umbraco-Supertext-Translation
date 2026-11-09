@@ -12,9 +12,16 @@
     <PackageReference Include="Umbraco.Cms.DevelopmentMode.Backoffice" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(SupertextPackageVersion)' == ''">
     <!-- The Supertext package, built from this repository -->
     <ProjectReference Include="../../src/Supertext.Umbraco.Translation/Supertext.Umbraco.Translation.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(SupertextPackageVersion)' != ''">
+    <!--
+      CI's runtime check: the package as published (dotnet pack, built against the lowest supported Umbraco)
+      from a local folder, -p:SupertextPackageVersion=... -p:RestoreAdditionalProjectSources=<folder>
+    -->
+    <PackageReference Include="Supertext.Umbraco.Translation" VersionOverride="$(SupertextPackageVersion)" />
   </ItemGroup>
 
   <PropertyGroup>

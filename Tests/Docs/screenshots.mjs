@@ -8,6 +8,7 @@
  *   DEMO_EDITOR_EMAIL / DEMO_EDITOR_PASSWORD  editor account (translates and publishes)
  *   DEMO_ADMIN_EMAIL / DEMO_ADMIN_PASSWORD    admin account (settings screens)
  *   CHROMIUM_PATH                             optional Chromium binary
+ *   SCREENSHOTS_OUT                           optional output folder (default docs/images)
  *   ONLY=dashboard                            only the Settings › Supertext dashboard (any demo state)
  *
  * The demo must not have translations of "Features" yet (fresh database). Start it with
@@ -18,7 +19,7 @@ import { chromium } from 'playwright';
 const B = process.env.BASE_URL || 'http://127.0.0.1:8095';
 const EDITOR = [process.env.DEMO_EDITOR_EMAIL || 'editor@example.com', process.env.DEMO_EDITOR_PASSWORD || 'Docs12345!Docs'];
 const ADMIN = [process.env.DEMO_ADMIN_EMAIL || 'admin@example.com', process.env.DEMO_ADMIN_PASSWORD || 'Docs12345!Docs'];
-const OUT = new URL('../../docs/images', import.meta.url).pathname;
+const OUT = process.env.SCREENSHOTS_OUT || new URL('../../docs/images', import.meta.url).pathname; // CI's runtime check writes elsewhere
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined });
 const pad = (r, p = 8) => ({ x: Math.max(0, r.x - p), y: Math.max(0, r.y - p), width: r.width + 2 * p, height: r.height + 2 * p });

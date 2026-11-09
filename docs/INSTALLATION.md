@@ -2,13 +2,13 @@
 
 For administrators setting up the package on an Umbraco site.
 
-> **Just want to try it?** `demo/` contains a ready-to-run container with Umbraco 17, the Clean starter kit in English, German, French and Italian (Switzerland), and this package. It also runs the public Supertext demo. See the *Demo* section of the [developer guide](DEVELOPER.md#demo-railway).
+> **Just want to try it?** `demo/` contains a ready-to-run container with Umbraco 18, the Clean starter kit in English, German, French and Italian (Switzerland), and this package. It also runs the public Supertext demo. See the *Demo* section of the [developer guide](DEVELOPER.md#demo-railway).
 
 ## Requirements
 
 | | |
 | --- | --- |
-| Umbraco | 17 LTS and 18 (tested with 17.8 and 18.3) |
+| Umbraco | 17 LTS (17.8.0 or later) and 18 (tested with 17.8 and 18.3) |
 | .NET | 10 |
 | Languages | At least two languages, and document types that **vary by culture** |
 | Supertext | An account with an API key — see [Set the API key](#2-set-the-api-key) |

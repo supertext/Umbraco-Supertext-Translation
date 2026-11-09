@@ -51,7 +51,7 @@ export SUPERTEXT_API_KEY=...        # or "Supertext": { "ApiKey": "..." } in app
 
 ## Demo
 
-`demo/` builds a container with Umbraco 17, the Clean starter kit in English, German, French and Italian (Switzerland), and this package. It's deployed to Railway on every push to `main` — details in the [developer guide](docs/DEVELOPER.md#demo-railway).
+`demo/` builds a container with Umbraco 18, the Clean starter kit in English, German, French and Italian (Switzerland), and this package. It's deployed to Railway on every push to `main` — details in the [developer guide](docs/DEVELOPER.md#demo-railway).
 
 ## Roadmap
 

@@ -25,7 +25,7 @@ fi
 export Umbraco__CMS__Unattended__UnattendedUserEmail="${DEMO_ADMIN_EMAIL:-}"
 export Umbraco__CMS__Unattended__UnattendedUserPassword="${DEMO_ADMIN_PASSWORD:-}"
 
-# Umbraco 17 doesn't detect its own URL; the backoffice login needs it.
+# Umbraco (17 and 18) doesn't detect its own URL; the backoffice login needs it.
 if [ -z "$Umbraco__CMS__WebRouting__UmbracoApplicationUrl" ]; then
   if [ -n "$APP_URL" ]; then
     export Umbraco__CMS__WebRouting__UmbracoApplicationUrl="$APP_URL"

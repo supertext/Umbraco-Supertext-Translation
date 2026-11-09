@@ -14,5 +14,6 @@
 }
 
 <div class="richtext @(spacingClasses)">
-    @row.Content
+    @* Clean 8 (Umbraco 18) calls this property "richContent", Clean 7 (Umbraco 17, CI's runtime check) "content" *@
+    @(row?.Value<Umbraco.Cms.Core.Strings.IHtmlEncodedString>("richContent") ?? row?.Value<Umbraco.Cms.Core.Strings.IHtmlEncodedString>("content"))
 </div>

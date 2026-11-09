@@ -150,9 +150,9 @@ dotnet run --urls http://127.0.0.1:8095
 
 The first start installs Umbraco (SQLite in `umbraco/Data`), imports Clean, and `DemoSetupService` makes it multilingual (watch for `[demo] setup complete` in `umbraco/Logs`). Delete `umbraco/Data` for a fresh start.
 
-Two Umbraco 17 settings matter for local HTTP:
+Two Umbraco settings matter for local HTTP:
 
-- `UmbracoApplicationUrl`: Umbraco 17 doesn't auto-detect its URL; without it the backoffice login fails (the OAuth redirect address is unknown).
+- `UmbracoApplicationUrl`: Umbraco (17 and 18) doesn't auto-detect its URL; without it the backoffice login fails (the OAuth redirect address is unknown).
 - `Global:UseHttps=false`: otherwise OpenIddict refuses the login over plain HTTP ("This server only accepts HTTPS requests"), also in Development. On Railway, HTTPS comes through the proxy instead (see Demo).
 
 ## Tests
@@ -164,6 +164,8 @@ node Tests/Localization/check-keys.mjs                   # UI strings complete i
 ```
 
 CI (`.github/workflows/ci.yml`) builds the package and the demo, runs the tests, syntax-checks the backoffice modules (and their language files), checks the UI strings and the demo entrypoint.
+
+The **runtime** job runs the package on every supported Umbraco line: Umbraco 17.8.1 LTS (with Clean 7.0.8) and 18.3.1 (with Clean 8.0.1). It packs the package as it is published (built against the lowest supported Umbraco, 17.8.0), builds the demo against that package instead of the project (`-p:UmbracoVersion=… -p:CleanVersion=… -p:SupertextPackageVersion=0.0.0-ci -p:RestoreAdditionalProjectSources=<folder>`), starts it fresh with the stand-in API and runs `Tests/Docs/screenshots.mjs` (images to `SCREENSHOTS_OUT`, not committed): the editor translates and publishes *Home* and *Features* through the real backoffice, and the German page must render. It fails on `MissingMethodException` and similar in Umbraco's log: members Umbraco 18 moved only fail at run time. When a new Umbraco line comes out, add it to the matrix.
 
 `LanguageMappingTests` cover the language rules (exact codes, the SDK's defaults, mapping in both directions, unmapped cultures, tone support); `TranslationReviewTests` the review service client (see *Translation review*); `LanguageSettingsTests` the saved mapping, appsettings winning per value, the form's checks (exact codes stored, unknown cultures and codes refused, tone dropped where Supertext has none, other languages kept) and the stored JSON; `TranslationFileExchangeTests` the translation files glue (reference round trip, export with the collector's keys and the mapping, `ok` written, `source_changed` only with the option, untranslated/invalid/missing not written, other plugin and unknown reference refused, too large and bad files refused); `ReportingTests` run `SupertextReporting` with an in-memory state store and a fake `HttpMessageHandler` for `GET features` and the center's `POST report` (installed report with versions and callback, no report without a change, 401/403 once, *Check API key*, reports off, broken storage, ping answers, site URL).
 
@@ -211,7 +213,7 @@ The MP4 (about 100 s) goes to `Tests/Docs/movie/out/Umbraco-Supertext-Translatio
 
 ## Demo (Railway)
 
-The public demo is a container built from `demo/Dockerfile`: Umbraco 17 LTS with the **Clean** starter kit (English) made multilingual — German, French and Italian (Switzerland) — and this package by project reference. It runs on Railway in the `supertext-cms-demos` project, service `umbraco`, region EU West (Amsterdam): <https://umbraco-production.up.railway.app/> (backoffice: `/umbraco`). German, French and Italian URLs (`/de`, `/fr`, `/it`) return 404 until a page is translated and published in that language.
+The public demo is a container built from `demo/Dockerfile`: Umbraco 18 with the **Clean** 8 starter kit (English) made multilingual — German, French and Italian (Switzerland) — and this package by project reference. It runs on Railway in the `supertext-cms-demos` project, service `umbraco`, region EU West (Amsterdam): <https://umbraco-production.up.railway.app/> (backoffice: `/umbraco`). German, French and Italian URLs (`/de`, `/fr`, `/it`) return 404 until a page is translated and published in that language.
 
 **Deploys:** Railway watches `main` and rebuilds on every push.
 
@@ -219,9 +221,9 @@ The public demo is a container built from `demo/Dockerfile`: Umbraco 17 LTS with
 | --- | --- |
 | `demo/Dockerfile` | `dotnet publish` of `demo/SupertextDemo` (SDK image), run on the ASP.NET image with `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true` |
 | `demo/entrypoint.sh` | Links `umbraco/Data` (SQLite), `umbraco/Logs` and `wwwroot/media` to the volume at `/data`; maps `DEMO_ADMIN_*` to the unattended install; sets `UmbracoApplicationUrl` from `APP_URL` or `RAILWAY_PUBLIC_DOMAIN` |
-| `demo/SupertextDemo/` | The Umbraco project: Umbraco 17.8, Clean 7.0.8, the package, `appsettings.json` (SQLite, unattended install, `ExcludedProperties: ["code"]`) |
+| `demo/SupertextDemo/` | The Umbraco project: Umbraco 18.3, Clean 8.0.1 (`UmbracoVersion` and `CleanVersion` in `Directory.Packages.props`; CI also runs it on 17.8 with Clean 7.0.8), the package, `appsettings.json` (SQLite, unattended install, `ExcludedProperties: ["code"]`) |
 | `demo/SupertextDemo/DemoSetup/DemoSetupService.cs` | On every start, once Umbraco runs: adds de-CH/fr-CH/it-CH, makes non-element document types and their text/rich-text/block-list properties vary by culture, moves composition values to en-US (Umbraco only moves values of the type's own properties), sets `/de` `/fr` `/it` on the home page, creates the demo accounts, and saves formal address for the three languages as Settings › Supertext would (only while nothing is saved there) |
-| `demo/SupertextDemo/Views/` | Clean's views, **committed**: Clean writes them only during its first-boot package migration, so a container restart would otherwise lose them |
+| `demo/SupertextDemo/Views/` | Clean 8's views, **committed**: Clean writes them only during its first-boot package migration, so a container restart would otherwise lose them. `Partials/blocklist/Components/richTextRow.cshtml` reads the rich text by alias (`richContent` in Clean 8, `content` in Clean 7) so the same views also run in CI's Umbraco 17 check |
 | `demo/.env.example` | All variables |
 
 **State:** the SQLite database, logs and media live on a Railway volume at `/data`. Everything else comes from the image. To reset the demo, delete the files on the volume and redeploy.
@@ -284,5 +286,5 @@ Publishing to NuGet stays manual: `dotnet pack src/Supertext.Umbraco.Translation
 - Media alt texts, dictionary items and tags are not translated.
 - *Export for translation* works on one page at a time (no bulk export yet). The docs have no screenshots of the export and import parts of the dialog yet (the local demo didn't start in the session that added them; `Tests/Docs/screenshots.mjs` should add them).
 - Human (professional) translation orders are not supported yet.
-- Tested with the stand-in API on Umbraco 17.8 and, with the package built against 17 as published, on Umbraco 18.3 (`Tests/Docs/screenshots.mjs` flow); not yet against the live API. The package is built against Umbraco 17 and the same DLL runs on 18, so it must only call members that exist in both: Umbraco 18 moved some members, so code that compiles against both can still fail at run time, e.g. `IContentService.GetById(Guid)` (only on `IContentServiceBase<IContent>` now; a call compiled against 17 fails on 18 with `MissingMethodException`). The demo stays on Umbraco 17; moving it to 18 also needs Clean 8 and updated views in `demo/SupertextDemo/Views/` (Umbraco 18 removed `BlockListItem.ContentUdi`).
+- Tested with the stand-in API on Umbraco 17.8 and 18.3, with the package built against 17 as published (`Tests/Docs/screenshots.mjs` flow, in CI on every push); not yet against the live API. The package is built against Umbraco 17 and the same DLL runs on 18, so it must only call members that exist in both: Umbraco 18 moved some members, so code that compiles against both can still fail at run time, e.g. `IContentService.GetById(Guid)` (only on `IContentServiceBase<IContent>` now; a call compiled against 17 fails on 18 with `MissingMethodException`). CI's *runtime* job catches this: it packs the package (built against 17.8.0, the lowest supported version) and runs it in a fresh demo on Umbraco 17.8 and 18.3 (see *Tests*).
 - The language mapping and tone are edited on Settings › Supertext; the other settings (API key, endpoint, version reports) are read from appsettings.json / the environment and only shown there. Editing those would add `afterSettingsSaved` reports.

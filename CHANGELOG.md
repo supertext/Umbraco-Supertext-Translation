@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Changed: the minimum Umbraco 17 version is now 17.8.0 (earlier 17.x pulled in MessagePack and System.Security.Cryptography versions with known vulnerabilities).
+- Changed: the demo runs Umbraco 18.3 with the Clean 8 starter kit (was Umbraco 17.8 with Clean 7). Umbraco 17 LTS stays supported: CI now runs the package as published in a fresh site on both Umbraco 17.8 and 18.3 and translates through the backoffice on each.
 - Fixed: on Umbraco 18 the *Translate with Supertext* dialog failed to load (Umbraco 18 removed a method the package used; HTTP 500, `MissingMethodException` in the log). Now tested on Umbraco 18.3 and 17.8.
 - Docs: demo movie in the README (`docs/images/demo.gif`, recorded from the demo against the stand-in with `npm run movie` in `Tests/Docs`; the MP4 version, not committed, is narrated with the Piper voice “alba”), and an install and configuration movie (`npm run movie:install`: the install commands, `SUPERTEXT_API_KEY`, Settings › Languages, Settings › Supertext with *Check API key* and the language mapping, and where editors find *Translate with Supertext*; narrated MP4, not committed).
 - Added: the Supertext support form is linked in the README, the user guide and GitHub's "New issue" page.
