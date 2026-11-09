@@ -18,6 +18,13 @@ public sealed class SupertextOptions
     /// <summary>API base URL. Live: https://api.supertext.com/v1/ (also api.staging… / api.testing…).</summary>
     public string Endpoint { get; set; } = "https://api.supertext.com/v1/";
 
+    /// <summary>
+    /// Supertext's review service for languages with <i>Translation review</i> on (Settings › Supertext):
+    /// translations into them go there instead of <see cref="Endpoint"/>. Empty turns review off for every
+    /// language. The environment variable SUPERTEXT_REVIEW_URL wins (an empty one keeps this value).
+    /// </summary>
+    public string ReviewUrl { get; set; } = Api.SupertextClientFactory.ReviewUrl;
+
     /// <summary>Seconds between status checks.</summary>
     public int PollIntervalSeconds { get; set; } = 2;
 
@@ -34,7 +41,8 @@ public sealed class SupertextOptions
     /// <summary>
     /// Per-language settings keyed by Umbraco culture (ISO code, e.g. "de-CH"). <c>Code</c> is the
     /// language mapping: without it, a culture that is itself a Supertext code (de-CH, es, apart from
-    /// case and _/-) is used as it is, and any other culture can't be translated (no guessing).
+    /// case and _/-) is used as it is, else the SDK's default target where one is obvious (de → de-DE, es-ES → es),
+    /// and any other culture can't be translated.
     /// </summary>
     public Dictionary<string, SupertextLanguageOptions> Languages { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
@@ -64,6 +72,22 @@ public sealed class SupertextOptions
         }
     }
 
+    /// <summary>The review service's base URL (with a trailing slash), or null when review is off (empty, or the same as the API).</summary>
+    internal string? EffectiveReviewUrl
+    {
+        get
+        {
+            var fromEnv = Environment.GetEnvironmentVariable("SUPERTEXT_REVIEW_URL");
+            var url = (string.IsNullOrWhiteSpace(fromEnv) ? ReviewUrl : fromEnv).Trim();
+            if (url == string.Empty)
+            {
+                return null;
+            }
+            url = url.TrimEnd('/') + "/";
+            return string.Equals(url, EffectiveEndpoint, StringComparison.OrdinalIgnoreCase) ? null : url;
+        }
+    }
+
     internal string EffectiveEndpoint
     {
         get
@@ -90,6 +114,12 @@ public sealed class SupertextLanguageOptions
 
     /// <summary>"more" (formal: Sie/vous/Lei), "less" (informal: du/tu) or "default". Not every target offers it (English, Swiss German, Romansh, Albanian, Serbian don't).</summary>
     public string? Politeness { get; set; }
+
+    /// <summary>
+    /// <i>Translation review</i>: true sends translations into this culture through Supertext's review service
+    /// (<see cref="SupertextOptions.ReviewUrl"/>), false directly to Supertext. Not set: the checkbox on Settings › Supertext.
+    /// </summary>
+    public bool? Review { get; set; }
 
     /// <summary>False hides the language from the translate dialog.</summary>
     public bool Enabled { get; set; } = true;

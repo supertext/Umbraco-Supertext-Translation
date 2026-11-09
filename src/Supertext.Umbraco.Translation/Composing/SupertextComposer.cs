@@ -19,6 +19,9 @@ public sealed class SupertextComposer : IComposer
         builder.Services.AddHttpClient(SupertextClientFactory.HttpClientName, http => http.Timeout = TimeSpan.FromSeconds(60));
         builder.Services.AddSingleton<SupertextClientFactory>();
         builder.Services.AddScoped<ContentTranslator>();
+        // Language mapping saved on Settings › Supertext (umbracoKeyValue); appsettings.json overrides it.
+        builder.Services.AddSingleton<ILanguageSettingsStore, KeyValueLanguageSettingsStore>();
+        builder.Services.AddSingleton<LanguageSettingsProvider>();
 
         // Commando Center: version reports, API key check, ping (Services/SupertextReporting.cs).
         builder.Services.AddSingleton<IReporterStateStore, KeyValueReporterStateStore>();

@@ -7,6 +7,7 @@
  * with "[<target_lang>] " when STAND_IN_PREFIX=1, which makes untranslated text
  * easy to spot in tests. STAND_IN_DUMP=<dir> writes each submitted document's
  * untranslated segments to <dir>/<target_lang>.json (to extend the samples).
+ * STAND_IN_DELAY=<seconds>: files stay `in_progress` that long (the demo movie shows the waiting state).
  * Listens on :8765 (PORT), accepts any API key. Also answers POST /report with 202 (a stand-in
  * Commando Center: point SUPERTEXT_REPORT_URL at http://127.0.0.1:8765/report so local demos and
  * screenshots never report to the live center).
@@ -32,6 +33,7 @@ const TARGETS = new Set(['bg', 'cs', 'da', 'de-AT', 'de-CH', 'de-DE', 'el', 'en-
   'gsw-u-sd-chbe', 'gsw-u-sd-chzh', 'hr', 'hu', 'it-CH', 'it-IT', 'ja', 'ko', 'nb', 'nl', 'pl', 'pt-BR', 'pt-PT', 'rm', 'ru',
   'sk', 'sl', 'sq', 'sr-Cyrl', 'sr-Latn', 'sv', 'tr', 'zh-Hans', 'zh-Hant']);
 const prefix = process.env.STAND_IN_PREFIX === '1';
+const delayMs = Number(process.env.STAND_IN_DELAY || 0) * 1000;
 
 http
   .createServer(async (req, res) => {
@@ -66,14 +68,14 @@ http
         return send(400, { error_code: 'INVALID_LANGUAGE_PAIR', source_lang: form.get('source_lang'), target_lang: target });
       }
       const id = randomBytes(6).toString('hex');
-      files.set(id, { html: await form.get('file').text(), lang: target });
+      files.set(id, { html: await form.get('file').text(), lang: target, ready: Date.now() + delayMs });
       console.log(`POST target_lang=${form.get('target_lang')} source_lang=${form.get('source_lang')} politeness=${form.get('politeness') ?? '-'} -> ${id}`);
       return send(200, { file_id: id });
     }
     const match = path.match(/file\/([a-f0-9]+)(\/status|\/translation)?$/);
     if (!match || !files.has(match[1])) return send(404, {});
     if (req.method === 'DELETE') { files.delete(match[1]); return send(200, {}); }
-    if (match[2] === '/status') return send(200, { status: 'done' });
+    if (match[2] === '/status') return send(200, { status: Date.now() < files.get(match[1]).ready ? 'in_progress' : 'done' });
     const { html, lang } = files.get(match[1]);
     const sample = sampleFor(lang);
     if (process.env.STAND_IN_DUMP) {

@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Supertext.Umbraco.Translation.Tests;
 
-/// <summary>Umbraco cultures → Supertext codes: the mapping, else an exact Supertext code, else nothing (no guessing).</summary>
+/// <summary>Umbraco cultures → Supertext codes: the mapping, else an exact Supertext code, else the SDK's default, else nothing.</summary>
 public class LanguageMappingTests
 {
     private static SupertextOptions With(params (string Culture, string? Code, string? Politeness)[] languages)
@@ -27,9 +27,23 @@ public class LanguageMappingTests
         Assert.Equal(expected, LanguageMapping.Target(culture, new SupertextOptions()));
 
     [Theory]
-    [InlineData("de")]      // no default region any more: Germany, Austria or Switzerland?
-    [InlineData("es-ES")]   // Supertext wants "es"
-    [InlineData("zh-CN")]   // Supertext wants "zh-Hans"
+    [InlineData("de", "de-DE")]       // the SDK's default targets (SDK 0.4.0)
+    [InlineData("es-ES", "es")]       // a region of a bare target
+    [InlineData("zh-CN", "zh-Hans")]
+    public void ObviousDefaultsAreUsed(string culture, string expected)
+    {
+        Assert.Equal(expected, LanguageMapping.Target(culture, new SupertextOptions()));
+        var resolved = LanguageMapping.Resolve(culture, new SupertextOptions());
+        Assert.Equal(expected, resolved.Code);
+        Assert.True(resolved.FromDefault);
+        Assert.False(resolved.Mapped);
+        Assert.False(LanguageMapping.Resolve("de-CH", new SupertextOptions()).FromDefault);
+    }
+
+    [Theory]
+    [InlineData("en-IE")]   // no obvious default: needs a mapping
+    [InlineData("de-LI")]
+    [InlineData("gsw")]
     public void OtherCulturesAreNotGuessed(string culture)
     {
         var e = Assert.Throws<SupertextException>(() => LanguageMapping.Target(culture, new SupertextOptions()));
@@ -56,7 +70,7 @@ public class LanguageMappingTests
     public void EntriesWithoutCodeAreNoMapping()
     {
         var options = With(("de", null, "more"), ("fr-CH", "  ", null));
-        Assert.Throws<SupertextException>(() => LanguageMapping.Target("de", options));
+        Assert.Equal("de-DE", LanguageMapping.Target("de", options)); // no code: the default
         Assert.Equal("fr-CH", LanguageMapping.Target("fr-CH", options));
         Assert.Equal(Politeness.More, LanguageMapping.PolitenessFor("de", options));
     }

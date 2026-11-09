@@ -1,6 +1,8 @@
 // The "Supertext" dashboard in the Settings section: the configuration as the package sees it, the latest
-// API key check (with a "Check API key" button), the version reports setting and the language mapping.
-// Settings themselves live in appsettings.json / the environment (docs/INSTALLATION.md).
+// API key check (with a "Check API key" button), the version reports setting and the language mapping:
+// a Supertext language, tone and Translation review per Umbraco language, saved with PUT settings/languages.
+// Supertext:Languages in appsettings.json overrides the mapping; other settings live in appsettings.json /
+// the environment (docs/INSTALLATION.md).
 import { html, css, nothing, unsafeHTML } from '@umbraco-cms/backoffice/external/lit';
 import { UmbLitElement } from '@umbraco-cms/backoffice/lit-element';
 import { umbHttpClient } from '@umbraco-cms/backoffice/http-client';
@@ -14,11 +16,16 @@ export class SupertextSettingsDashboardElement extends UmbLitElement {
     _check: { state: true },
     _checking: { state: true },
     _error: { state: true },
+    _rows: { state: true },
+    _saving: { state: true },
+    _saveMessage: { state: true },
   };
 
   constructor() {
     super();
     this._checking = false;
+    this._saving = false;
+    this._rows = {};
   }
 
   async connectedCallback() {
@@ -30,6 +37,69 @@ export class SupertextSettingsDashboardElement extends UmbLitElement {
     }
     this._settings = data;
     this._check = data.keyCheck;
+    this._initRows(data.languages);
+  }
+
+  // Form state per Umbraco language: the chosen code (saved, else the suggestion, else none) and tone.
+  _initRows(languages) {
+    const rows = {};
+    for (const l of languages) {
+      rows[l.isoCode] = {
+        code: l.configuredCode ? l.savedCode ?? '' : l.savedCode ?? l.suggestedCode ?? '',
+        politeness: l.politeness,
+        review: l.review,
+      };
+    }
+    this._rows = rows;
+  }
+
+  _setRow(isoCode, change) {
+    this._rows = { ...this._rows, [isoCode]: { ...this._rows[isoCode], ...change } };
+    this._saveMessage = undefined;
+  }
+
+  _target(code) {
+    return this._settings.targets.find((t) => t.code === code);
+  }
+
+  // The language's name in the backoffice language where the browser knows it ("Deutsch (Schweiz)"),
+  // else Supertext's English name; Swiss German dialects always use Supertext's name (Zurich, Bern).
+  _name(target) {
+    if (!target.code.includes('-u-')) {
+      try {
+        const lang = typeof this.localize.lang === 'function' ? this.localize.lang() : document.documentElement.lang;
+        const name = new Intl.DisplayNames([lang || 'en'], { type: 'language' }).of(target.code);
+        if (name && name !== target.code) return name;
+      } catch {
+        // fall back to Supertext's name
+      }
+    }
+    return target.name;
+  }
+
+  async _saveLanguages() {
+    this._saving = true;
+    this._saveMessage = undefined;
+    const languages = this._settings.languages.map((l) => ({
+      isoCode: l.isoCode,
+      code: this._rows[l.isoCode].code || null,
+      politeness: this._rows[l.isoCode].politeness,
+      review: this._rows[l.isoCode].review,
+    }));
+    const { data, error } = await umbHttpClient.put({
+      url: `${API}/languages`,
+      security: AUTH,
+      body: { languages },
+      headers: { 'Content-Type': 'application/json' },
+    });
+    this._saving = false;
+    if (error || !data) {
+      this._saveMessage = { ok: false, text: this.localize.term('supertext_saveFailed') };
+      return;
+    }
+    this._settings = { ...this._settings, languages: data };
+    this._initRows(data);
+    this._saveMessage = { ok: true, text: this.localize.term('supertext_languagesSaved') };
   }
 
   async _checkKey() {
@@ -108,31 +178,85 @@ export class SupertextSettingsDashboardElement extends UmbLitElement {
             <uui-table-head-cell>${this.localize.term('supertext_umbracoLanguage')}</uui-table-head-cell>
             <uui-table-head-cell>${this.localize.term('supertext_supertextLanguage')}</uui-table-head-cell>
             <uui-table-head-cell>${this.localize.term('supertext_tone')}</uui-table-head-cell>
+            <uui-table-head-cell>${this.localize.term('supertext_review')}</uui-table-head-cell>
           </uui-table-head>
-          ${s.languages.map(
-            (l) => html`
-              <uui-table-row>
-                <uui-table-cell>
-                  ${l.name} <code>${l.isoCode}</code>
-                  ${l.enabled ? nothing : html`<span class="hint">· ${this.localize.term('supertext_hiddenInDialog')}</span>`}
-                </uui-table-cell>
-                <uui-table-cell>
-                  ${l.supertextCode
-                    ? html`<code>${l.supertextCode}</code>
-                        <span class="hint">${this.localize.term(l.mapped ? 'supertext_fromMapping' : 'supertext_exactMatch')}</span>`
-                    : html`<span class="fail">${this.localize.term('supertext_notMappedLong', l.isoCode)}</span>`}
-                </uui-table-cell>
-                <uui-table-cell>
-                  ${this._tone(l.politeness)}
-                  ${l.politeness !== 'default' && l.politenessSupported === false
-                    ? html`<div class="fail">${this.localize.term('supertext_noPoliteness')}</div>`
-                    : nothing}
-                </uui-table-cell>
-              </uui-table-row>
-            `,
-          )}
+          ${s.languages.map((l) => this._languageRow(l))}
         </uui-table>
+        <p class="hint review-help">
+          ${this.localize.term('supertext_reviewHelp')}
+          ${s.reviewUrl ? nothing : html`<span class="fail">${this.localize.term('supertext_reviewOff')}</span>`}
+        </p>
+        <div class="actions">
+          <uui-button
+            look="primary"
+            color="positive"
+            label=${this.localize.term('supertext_saveLanguages')}
+            .state=${this._saving ? 'waiting' : undefined}
+            ?disabled=${this._saving}
+            @click=${this._saveLanguages}></uui-button>
+          ${this._saveMessage ? html`<span class=${this._saveMessage.ok ? 'ok' : 'fail'}>${this._saveMessage.text}</span>` : nothing}
+        </div>
       </uui-box>
+    `;
+  }
+
+  _languageRow(l) {
+    const row = this._rows[l.isoCode] ?? { code: '', politeness: 'default' };
+    const code = l.configuredCode ? l.supertextCode : row.code || null;
+    const effective = code ?? (l.configuredCode ? null : l.suggestedCode);
+    const target = effective ? this._target(effective) : undefined;
+    const options = [
+      { name: this.localize.term('supertext_choose'), value: '', selected: !row.code },
+      ...this._settings.targets.map((t) => ({ name: `${this._name(t)} (${t.code})`, value: t.code, selected: t.code === row.code })),
+    ];
+    const tones = ['default', 'more', 'less'].map((p) => ({ name: this._tone(p), value: p, selected: p === row.politeness }));
+    return html`
+      <uui-table-row>
+        <uui-table-cell>
+          ${l.name} <code>${l.isoCode}</code>
+          ${l.enabled ? nothing : html`<span class="hint">· ${this.localize.term('supertext_hiddenInDialog')}</span>`}
+        </uui-table-cell>
+        <uui-table-cell>
+          ${l.configuredCode
+            ? html`<div><code>${l.supertextCode ?? l.configuredCode}</code></div>
+                <div class="hint">${this.localize.term('supertext_fromConfig', l.isoCode)}</div>`
+            : html`<uui-select
+                  label=${this.localize.term('supertext_supertextLanguage')}
+                  .options=${options}
+                  @change=${(e) => this._setRow(l.isoCode, { code: e.target.value })}></uui-select>
+                ${!effective
+                  ? html`<div class="fail">${this.localize.term('supertext_notMappedLong', l.isoCode)}</div>`
+                  : !row.code || (!l.savedCode && row.code === l.suggestedCode)
+                    ? html`<div class="hint">${this.localize.term(l.fromDefault ? 'supertext_defaultTarget' : 'supertext_exactMatch')}</div>`
+                    : nothing}`}
+        </uui-table-cell>
+        <uui-table-cell>
+          ${l.configuredPoliteness
+            ? html`<div>${this._tone(l.politeness)}</div>
+                <div class="hint">${this.localize.term('supertext_politenessFromConfig', l.isoCode)}</div>
+                ${l.politeness !== 'default' && l.politenessSupported === false
+                  ? html`<div class="fail">${this.localize.term('supertext_noPoliteness')}</div>`
+                  : nothing}`
+            : target?.politeness
+              ? html`<uui-select
+                  label=${this.localize.term('supertext_tone')}
+                  .options=${tones}
+                  @change=${(e) => this._setRow(l.isoCode, { politeness: e.target.value })}></uui-select>`
+              : html`<span class="hint">${target ? this.localize.term('supertext_noPoliteness') : '—'}</span>`}
+        </uui-table-cell>
+        <uui-table-cell>
+          <uui-checkbox
+            label=${this.localize.term('supertext_review')}
+            ?checked=${l.configuredReview ?? row.review}
+            ?disabled=${l.configuredReview !== null && l.configuredReview !== undefined}
+            @change=${(e) => this._setRow(l.isoCode, { review: e.target.checked })}
+            ><span class="sr-only">${this.localize.term('supertext_review')}: ${l.name}</span></uui-checkbox
+          >
+          ${l.configuredReview !== null && l.configuredReview !== undefined
+            ? html`<div class="hint">${this.localize.term('supertext_reviewFromConfig', l.isoCode)}</div>`
+            : nothing}
+        </uui-table-cell>
+      </uui-table-row>
     `;
   }
 
@@ -146,6 +270,11 @@ export class SupertextSettingsDashboardElement extends UmbLitElement {
     .fail { color: var(--uui-color-danger-standalone); }
     .fail a, .ok a { color: inherit; text-decoration: underline; }
     p { margin-top: 0; }
+    uui-select { min-width: 18rem; }
+    code { white-space: nowrap; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .review-help { margin: var(--uui-size-space-4) 0 0; }
+    .actions { display: flex; align-items: center; gap: var(--uui-size-space-4); margin-top: var(--uui-size-space-5); }
   `;
 }
 

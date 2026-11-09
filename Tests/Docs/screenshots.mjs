@@ -92,7 +92,7 @@ async function publishGerman(page, screenshot) {
   await page.waitForTimeout(3000);
 }
 
-/** Settings › Supertext: configuration, API key check, version reports, languages. */
+/** Settings › Supertext: configuration, API key check and version reports; the languages box (combo boxes) on its own. */
 async function dashboard() {
   const admin = await login(ADMIN);
   // The key check's time changes with every run: show a fixed one, so the image only changes with the UI.
@@ -106,15 +106,18 @@ async function dashboard() {
   await admin.getByRole('button', { name: 'Check API key' }).click();
   await admin.getByText('API key checked').first().waitFor({ timeout: 30000 });
   await admin.waitForTimeout(800);
-  const box = await admin.locator('supertext-settings-dashboard').boundingBox();
-  await shot(admin, 'supertext-dashboard', { x: box.x, y: box.y, width: box.width, height: Math.min(box.height, 900 - box.y) });
+  const boxes = admin.locator('supertext-settings-dashboard uui-box');
+  await boxes.first().screenshot({ path: `${OUT}/supertext-dashboard.png` });
+  await boxes.nth(1).scrollIntoViewIfNeeded();
+  await admin.waitForTimeout(300);
+  await boxes.nth(1).screenshot({ path: `${OUT}/supertext-languages.png` });
   await admin.context().close();
 }
 
 if (process.env.ONLY === 'dashboard') {
   await dashboard();
   await browser.close();
-  console.log(`Screenshot written to ${OUT}/supertext-dashboard.png`);
+  console.log(`Screenshots written to ${OUT}/supertext-dashboard.png and supertext-languages.png`);
   process.exit(0);
 }
 

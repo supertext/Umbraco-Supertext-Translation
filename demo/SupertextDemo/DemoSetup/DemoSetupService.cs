@@ -56,10 +56,11 @@ public sealed class DemoSetupService(
             using var scope = services.CreateScope();
             var sp = scope.ServiceProvider;
             await EnsureLanguagesAsync(sp.GetRequiredService<ILanguageService>());
-            EnsureCultureVariation(sp.GetRequiredService<IContentTypeService>());
+            await EnsureCultureVariationAsync(sp.GetRequiredService<IContentTypeService>());
             MoveSharedValuesToEnglish(sp.GetRequiredService<IContentService>());
             await EnsureDomainsAsync(sp.GetRequiredService<IContentService>(), sp.GetRequiredService<IDomainService>());
             await EnsureAccountsAsync(sp.GetRequiredService<IUserService>());
+            EnsureLanguageSettings(sp.GetRequiredService<Supertext.Umbraco.Translation.Services.ILanguageSettingsStore>());
             logger.LogInformation("[demo] setup complete");
         }
         catch (Exception e)
@@ -83,10 +84,27 @@ public sealed class DemoSetupService(
     }
 
     /// <summary>
+    /// Formal address for the target languages, as if chosen on Settings › Supertext (their Supertext
+    /// language is their own code). Only while nothing is saved there, so changes made on the screen stay.
+    /// </summary>
+    private void EnsureLanguageSettings(Supertext.Umbraco.Translation.Services.ILanguageSettingsStore store)
+    {
+        if (store.Load().Count > 0)
+        {
+            return;
+        }
+        store.Save(TargetLanguages.ToDictionary(
+            t => t.IsoCode,
+            t => new Supertext.Umbraco.Translation.Services.SavedLanguage { Politeness = "more" },
+            StringComparer.OrdinalIgnoreCase));
+        logger.LogInformation("[demo] Supertext languages: formal address for {Languages}", string.Join(", ", TargetLanguages.Select(t => t.IsoCode)));
+    }
+
+    /// <summary>
     /// Pages and their compositions vary by culture; text-like properties too. Element types
     /// used inside blocks stay invariant: the block list property varies as a whole.
     /// </summary>
-    private void EnsureCultureVariation(IContentTypeService contentTypeService)
+    private async Task EnsureCultureVariationAsync(IContentTypeService contentTypeService)
     {
         foreach (var contentType in contentTypeService.GetAll().Where(t => !t.IsElement))
         {
@@ -106,8 +124,8 @@ public sealed class DemoSetupService(
             }
             if (changed)
             {
-                contentTypeService.Save(contentType);
-                logger.LogInformation("[demo] document type {Alias} now varies by culture", contentType.Alias);
+                var saved = await contentTypeService.UpdateAsync(contentType, Constants.Security.SuperUserKey);
+                logger.LogInformation("[demo] document type {Alias} now varies by culture: {Status}", contentType.Alias, saved.Result);
             }
         }
     }
@@ -178,7 +196,7 @@ public sealed class DemoSetupService(
         {
             return;
         }
-        var current = domainService.GetAssignedDomains(home.Id, true).ToList();
+        var current = (await domainService.GetAssignedDomainsAsync(home.Key, true)).ToList();
         if (TargetLanguages.All(t => current.Any(d => string.Equals(d.DomainName, t.Path, StringComparison.OrdinalIgnoreCase))))
         {
             return;

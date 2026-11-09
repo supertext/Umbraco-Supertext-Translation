@@ -79,10 +79,10 @@ public class SdkIntegrationTests
     [Fact]
     public void UnsupportedLanguageAndFeatureHaveBackofficeCodes()
     {
-        var unmapped = Assert.Throws<SupertextException>(() => LanguageMapping.Target("de", new SupertextOptions()));
+        var unmapped = Assert.Throws<SupertextException>(() => LanguageMapping.Target("en-IE", new SupertextOptions()));
         var error = TranslationException.From(unmapped);
         Assert.Equal("unsupportedLanguage", error.Code);
-        Assert.Equal(["de"], error.Args);
+        Assert.Equal(["en-IE"], error.Args);
 
         var feature = TranslationException.From(new SupertextException(SupertextErrorCodes.UnsupportedFeature, "No politeness.", status: 400, feature: "politeness"));
         Assert.Equal("unsupportedFeature", feature.Code);

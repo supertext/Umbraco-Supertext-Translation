@@ -8,11 +8,11 @@ For administrators setting up the package on an Umbraco site.
 
 | | |
 | --- | --- |
-| Umbraco | 17 LTS (tested), 18 (supported) |
+| Umbraco | 17 LTS and 18 (tested with 17.8 and 18.3) |
 | .NET | 10 |
 | Languages | At least two languages, and document types that **vary by culture** |
 | Supertext | An account with an API key — see [Set the API key](#2-set-the-api-key) |
-| Network | The web server must reach `https://api.supertext.com` over HTTPS |
+| Network | The web server must reach `https://api.supertext.com` over HTTPS (and, for [Translation review](#translation-review), Supertext's review service) |
 
 ## 1. Add the package
 
@@ -68,7 +68,11 @@ The package uses Umbraco's own multilingual setup:
 
 Turning on *Vary by culture* for a document type that already has content moves the values of its own properties to the default language. **Properties that come from a composition keep their old shared values**, which then no longer show. Re-save those pages in the default language, or move the values with a small migration; the demo does this in `DemoSetupService.MoveSharedValuesToEnglish`.
 
-4. **Supertext language per Umbraco language.** Supertext accepts exactly these target codes (from its language list, October 2026):
+4. **Supertext language per Umbraco language:** **Settings › Supertext**, box *Languages*. Every Umbraco language has a combo box with Supertext's languages (shown as *name (code)*, the names in your backoffice language), where Supertext offers it a *Formal/informal* choice, and a **Translation review** checkbox (see [Translation review](#translation-review)). Choose and click **Save**; the choice applies to the next translation, no restart needed. It is stored in Umbraco's database (`umbracoKeyValue`, key `Supertext.Umbraco.Translation.Languages`).
+
+   ![Settings › Supertext, box Languages: a combo box per Umbraco language (American English (en-US), Swiss High German (de-CH), Swiss French (fr-CH), Italian (Switzerland) (it-CH), each marked "same code"), formal address chosen for German, French and Italian, English without a formal/informal choice, a Translation review checkbox per language (none ticked) with its explanation below the table, and the Save button](images/supertext-languages.png)
+
+   Supertext accepts exactly these target codes (from its language list, October 2026); the combo box offers exactly these:
 
    | Language | Supertext codes |
    | --- | --- |
@@ -77,24 +81,50 @@ Turning on *Vary by culture* for a document type that already has content moves 
    | Swiss German | `gsw-u-sd-chzh` (Zurich), `gsw-u-sd-chbe` (Bern) |
    | All others, without region | `bg`, `cs`, `da`, `el`, `es`, `fi`, `hr`, `hu`, `ja`, `ko`, `nb`, `nl`, `pl`, `rm`, `ru`, `sk`, `sl`, `sq`, `sv`, `tr` |
 
-   - An Umbraco culture that **is** one of these codes (apart from upper/lower case and `_`/`-`) is used as it is: `de-CH`, `fr-CH`, `es`, `nl`. Nothing to configure.
-   - **Every other culture needs a mapping**, `Supertext:Languages:<culture>:Code`, e.g. `de` → `de-CH`, `es-ES` → `es`, `zh-CN` → `zh-Hans`. The package never guesses a region: an unmapped language is shown as *not mapped* in the dialog and on **Settings › Supertext**, and translating into it says *has no Supertext language yet*; nothing is sent for it.
-   - The same mapping is used when the language is the **source**: Supertext gets its language without region (`de-CH` → `de`, `en-US` → `en`).
+   What the combo box preselects while nothing is saved, and what a language nobody chose is sent as:
+
+   - An Umbraco culture that **is** one of these codes (apart from upper/lower case and `_`/`-`) is used as it is: `de-CH`, `fr-CH`, `es`, `nl` (*same code*).
+   - **Where Supertext's default is obvious, it is used** (*Supertext default*):
+
+     | Umbraco culture | Supertext language |
+     | --- | --- |
+     | `de`, `en`, `fr`, `it`, `pt` | `de-DE`, `en-US`, `fr-FR`, `it-IT`, `pt-PT` |
+     | `zh`, `zh-CN`, `zh-SG` / `zh-TW`, `zh-HK`, `zh-MO` | `zh-Hans` / `zh-Hant` |
+     | `sr`, `sr-Latn-RS` | `sr-Latn` |
+     | a region of a language without regions | the language: `es-ES` → `es`, `nl-NL` → `nl`, `nb-NO` → `nb` |
+
+     Choose another code if you want one, e.g. `de` → `de-CH` for Swiss spelling.
+   - **Every other culture needs a choice** (`en-IE`, `de-LI`, `fr-BE`, `gsw`, `sr-RS`): its combo box shows *— choose —* and the dashboard says *Choose a Supertext language before translating into …*. Until then the dialog marks it *not mapped*, translating into it says *has no Supertext language yet*, and nothing is sent for it.
+   - The same choice is used when the language is the **source**: Supertext gets its language without region (`de-CH` → `de`, `en-US` → `en`).
+
+   *Formal/informal* (formal = Sie/vous/Lei, informal = du/tu, default = Supertext decides) is offered only for Supertext languages that have it; English, Swiss German, Romansh, Albanian and Serbian don't.
+
+   **Override in appsettings.json** (for automated setups): `Supertext:Languages:<culture>` wins over the screen, value by value. A language whose `Code` (or `Politeness`, `Review`) is set there shows that value on the dashboard, marked *set in appsettings.json*, instead of the combo box. `Enabled: false` hides a language from the dialog (appsettings only).
 
 ```json
 "Supertext": {
   "Languages": {
     "de": { "Code": "de-CH", "Politeness": "more" },
-    "fr-CH": { "Politeness": "more" },
     "es-ES": { "Code": "es" },
+    "fr-CH": { "Review": true },
     "en-GB": { "Enabled": false }
   }
 }
 ```
 
-`Politeness`: `more` = formal (Sie/vous/Lei), `less` = informal (du/tu), `default` = Supertext decides. Supertext offers no formal/informal choice for English, Swiss German, Romansh, Albanian and Serbian: leave those on `default` (the dashboard warns, and Supertext would answer *offers no formal or informal tone for this language*). `Enabled: false` hides a language from the dialog.
+## Translation review
 
-**Settings › Supertext** lists every Umbraco language with the Supertext code it is sent as (*same code* or *from the mapping*), *Not mapped* for languages that still need an entry, and the tone.
+With **Translation review**, people check the translations on the website itself and correct them there: customers or Supertext linguists open the original and the translated page side by side in Chrome with the *Supertext Localization Review* extension and fix texts in a side panel. Their corrections come back into Umbraco.
+
+Turn it on per language that is translated **into**: **Settings › Supertext**, box *Languages*, tick **Translation review** for that language → **Save**. Untick it to turn it off again; nothing else changes. (In appsettings.json: `Supertext:Languages:<culture>:Review`, which wins over the checkbox.)
+
+- Translations into that language then go through Supertext's review service instead of directly to Supertext. It answers exactly like Supertext and passes everything on with your API key, so billing, languages, formal/informal and error messages stay the same.
+- The review service keeps every translation of your account. A text it has translated before gets the same translation again (without a new Supertext call), and once a reviewer has corrected it, the corrected text.
+- **Corrections arrive with the next translation:** after a review, translate the pages into that language again (**Translate with Supertext**, replacing the existing language) to write the corrections into Umbraco as drafts. As always, translating again overwrites manual changes in the translated texts.
+- Reviewers get a review link for your site from Supertext; nothing to set up in Umbraco.
+- The review service works with keys of the **live** Supertext API. With a staging or testing `Endpoint`, leave review off.
+- *Export for translation* and *Import translation* don't use the review service. The API key check still goes directly to Supertext.
+- `Supertext:ReviewUrl` is the review service's address (default: Supertext's review service). Set it to `""` to turn review off for every language; the dashboard then says so.
 
 ## Interface languages
 
@@ -103,6 +133,8 @@ The package's own screens (the **Translate with Supertext** button and menu entr
 ## 4. Permissions
 
 Editors need the **Update** permission on the page and access to the target languages (user group *Languages*, or *Allow access to all languages*). The default *Editors* group has both.
+
+The same applies to **Export for translation** and **Import translation** in the dialog (XLIFF 1.2 or HTML files, see the user guide): exporting needs *Update* in the chosen target languages, importing needs it on the page and language each file belongs to. They need nothing to configure and no API key (they don't call Supertext). Files are limited to 10 MB (the dialog refuses larger files before reading them, the server checks again) and are read in memory, never stored. A reverse proxy in front of the site must allow request bodies of up to 30 MB for imports (the file travels JSON-encoded).
 
 ## 5. Check it works
 
@@ -142,11 +174,13 @@ All under `Supertext` in appsettings.json (or environment variables like `Supert
 | Setting | Default | |
 | --- | --- | --- |
 | `ApiKey` | `""` | API key; `SUPERTEXT_API_KEY` wins |
-| `Endpoint` | `https://api.supertext.com/v1/` | API base URL; `SUPERTEXT_API_ENDPOINT` wins |
+| `Endpoint` | `https://api.supertext.com/v1/` | API base URL; `SUPERTEXT_API_ENDPOINT` wins. For [Translation review](#translation-review) use the checkbox instead |
+| `ReviewUrl` | Supertext's review service | Address of the review service for languages with *Translation review* on; `SUPERTEXT_REVIEW_URL` wins (an empty variable keeps the setting). `""` turns review off for every language. Only change it when Supertext gives you another address |
 | `PollIntervalSeconds` | `2` | Seconds between status checks |
 | `PollTimeoutSeconds` | `240` | Maximum seconds to wait for one language |
-| `Languages.<culture>.Code` | the culture, if it is a Supertext code | Language mapping: the Supertext code for this culture (e.g. `de` → `de-CH`, `es-ES` → `es`; see [Languages](#3-languages)). Needed for every culture that isn't itself a Supertext code; no default regions |
-| `Languages.<culture>.Politeness` | `default` | `more`, `less` or `default` |
+| `Languages.<culture>.Code` | not set: the choice on Settings › Supertext | Overrides the Supertext language chosen on **Settings › Supertext** (e.g. `de` → `de-CH`, `en-IE` → `en-GB`; see [Languages](#3-languages)) |
+| `Languages.<culture>.Politeness` | not set: the choice on Settings › Supertext | Overrides *Formal/informal*: `more`, `less` or `default` |
+| `Languages.<culture>.Review` | not set: the checkbox on Settings › Supertext | Overrides *Translation review*: `true` or `false` |
 | `Languages.<culture>.Enabled` | `true` | `false` hides the language from the dialog |
 | `SendVersionReports` | `true` | *Send version information to Supertext* (see [Version information sent to Supertext](#version-information-sent-to-supertext)); `SUPERTEXT_VERSION_REPORTS=0`/`1` wins |
 | `PlainTextEditors` | `Umbraco.TextBox`, `Umbraco.TextArea` | Property editors translated as plain text |
@@ -175,9 +209,12 @@ Translations already made stay in place; they are ordinary Umbraco content.
 | The button doesn't appear | Hard-refresh the backoffice after installing. Check the user's Update permission on the page. |
 | *No Supertext API key is configured* | [Generate a key](https://www.supertext.com/en/integrations/api) (Admin role required), set `SUPERTEXT_API_KEY` (or `Supertext:ApiKey`) and restart. |
 | *Authentication failed* | Wrong or revoked key; paste it again (the prefix is optional) or [generate a new one](https://www.supertext.com/en/integrations/api). |
-| *The language … has no Supertext language yet* / *not mapped* | The Umbraco culture isn't a Supertext code: add `Supertext:Languages:<culture>:Code` (see [Languages](#3-languages)) and restart the site. |
-| *Supertext does not support this language pair* | A mapped code Supertext doesn't offer (e.g. `es-ES` instead of `es`, `zh-CN` instead of `zh-Hans`, or the same language as the source): fix `Languages.<culture>.Code`. |
-| *Supertext offers no formal or informal tone for this language* | `Politeness` is `more`/`less` for a language without it (English, Swiss German, Romansh, Albanian, Serbian); set it to `default`. |
+| *The language … has no Supertext language yet* / *not mapped* | The Umbraco culture has no obvious Supertext language: choose one in its combo box on **Settings › Supertext** (see [Languages](#3-languages)) and save. |
+| *Supertext does not support this language pair* | A code from `Supertext:Languages:<culture>:Code` in appsettings.json that Supertext doesn't offer (e.g. `es-ES` instead of `es`, `zh-CN` instead of `zh-Hans`), or the same language as the source: fix or remove it (the combo box only offers valid codes). |
+| *Supertext offers no formal or informal tone for this language* | `Politeness` in appsettings.json is `more`/`less` for a language without it (English, Swiss German, Romansh, Albanian, Serbian); set it to `default` or remove it. |
+| *Authentication failed* only for languages with *Translation review* | The review service only works with keys of the live Supertext API: with a staging or testing `Endpoint`, leave review off. |
+| Reviewers' corrections don't show up in Umbraco | They arrive with the next translation: translate the page into that language again. Check that the language's *Translation review* is ticked (and that `ReviewUrl` isn't empty). |
+| *Could not save the languages* (Settings › Supertext) | The user needs access to the Settings section; check the log for the reason. |
 | *Supertext rejected the API key* (Settings › Supertext) | Wrong, incomplete or revoked key: copy it again or [generate a new one](https://www.supertext.com/en/integrations/api), restart, then **Check API key**. |
 | *Supertext can't be reached* / *answered with an error* (Settings › Supertext) | The server can't reach `https://api.supertext.com` (proxy, firewall) or Supertext had a problem; check again later. |
 | *The translation from Supertext was empty or incomplete* | Supertext answered without some texts. Translate again; if it persists, send the log entry to Supertext support. |
@@ -191,4 +228,4 @@ Errors are logged with the prefix `Supertext:` (Settings › Log Viewer).
 
 ## Security note
 
-The API key is read only from the environment or appsettings and sent only to the configured endpoint; it is never part of a version report. The ping route is the package's only public route; it reads nothing and answers only the challenge. The backoffice API checks the editor's Update permission for the document and target languages before translating.
+The API key is read only from the environment or appsettings and sent only to the configured endpoint (and, for languages with Translation review, the review service, which passes it on to Supertext); it is never part of a version report. The ping route is the package's only public route; it reads nothing and answers only the challenge. The backoffice API checks the editor's Update permission for the document and target languages before translating. Saving the language mapping on Settings › Supertext needs access to the Settings section.

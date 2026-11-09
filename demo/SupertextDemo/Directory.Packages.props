@@ -11,8 +11,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Clean" Version="7.0.8" />
-    <PackageVersion Include="Umbraco.Cms" Version="17.7.1" />
-    <PackageVersion Include="Umbraco.Cms.DevelopmentMode.Backoffice" Version="17.7.1" />
+    <PackageVersion Include="Umbraco.Cms" Version="17.8.1" />
+    <PackageVersion Include="Umbraco.Cms.DevelopmentMode.Backoffice" Version="17.8.1" />
     <PackageVersion Include="Microsoft.ICU.ICU4C.Runtime" Version="$(UmbracoAppLocalIcuVersion)" />
   </ItemGroup>
 </Project>
