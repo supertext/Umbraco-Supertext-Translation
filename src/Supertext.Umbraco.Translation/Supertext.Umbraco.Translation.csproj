@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Supertext.Umbraco.Translation</RootNamespace>
     <PackageId>Supertext.Umbraco.Translation</PackageId>
-    <Version>0.1.0</Version>
+    <Version>1.0.0</Version>
     <Title>Supertext Translation for Umbraco</Title>
     <Description>Translate Umbraco documents into other languages with Supertext AI, from a "Translate with Supertext" action in the backoffice.</Description>
     <Authors>Supertext AG</Authors>

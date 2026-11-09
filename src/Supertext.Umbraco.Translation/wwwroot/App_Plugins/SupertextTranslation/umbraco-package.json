@@ -2,7 +2,7 @@
   "$schema": "../../umbraco-package-schema.json",
   "name": "Supertext Translation",
   "id": "Supertext.Umbraco.Translation",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "allowTelemetry": true,
   "extensions": [
     {
