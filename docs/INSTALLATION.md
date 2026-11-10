@@ -16,7 +16,7 @@ For administrators setting up the package on an Umbraco site.
 
 ## 1. Add the package
 
-The package is not on NuGet yet. Build it from the repository and add it from a local folder (it contains the [Supertext SDK](https://github.com/Supertext/Supertext-API-SDK-and-Guide) it uses; there is nothing else to install):
+The package is not on NuGet yet. Build it from the repository and add it from a local folder (it contains the [Supertext SDK](https://github.com/Supertext/Supertext-API-SDK-Guide) it uses; there is nothing else to install):
 
 ```bash
 git clone https://github.com/Supertext/Umbraco-Supertext-Translation

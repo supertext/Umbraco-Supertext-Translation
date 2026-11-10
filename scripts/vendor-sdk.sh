@@ -15,7 +15,7 @@ trap 'rm -rf "$TMP"' EXIT
 if [ -n "${SDK_DIR:-}" ]; then
     SRC="$SDK_DIR"
 else
-    git clone --quiet https://github.com/Supertext/Supertext-API-SDK-and-Guide "$TMP/sdk"
+    git clone --quiet https://github.com/Supertext/Supertext-API-SDK-Guide "$TMP/sdk"
     git -C "$TMP/sdk" checkout --quiet "$REF"
     SRC="$TMP/sdk"
 fi
@@ -41,7 +41,7 @@ printf '%s\n' "$VERSION" > "$DEST/VERSION"
 cat > "$DEST/README.md" <<EOT
 # Supertext SDK (bundled copy)
 
-.NET part of the [Supertext SDK](https://github.com/Supertext/Supertext-API-SDK-and-Guide),
+.NET part of the [Supertext SDK](https://github.com/Supertext/Supertext-API-SDK-Guide),
 version $VERSION, commit \`$COMMIT\`, namespace \`Supertext.Umbraco.Translation.Sdk\` instead of \`Supertext.Sdk\`
 (the API v1 classes in \`Supertext.Umbraco.Translation.Sdk.V1\`, folder \`src/V1/\`).
 Compiled into Supertext.Umbraco.Translation.dll (see the package's \`.csproj\`).
