@@ -163,6 +163,8 @@ dotnet test tests/Supertext.Umbraco.Translation.Tests    # SDK glue: error code 
 node Tests/Localization/check-keys.mjs                   # UI strings complete in en, de, fr, it
 ```
 
+The tests use xUnit v3 on Microsoft.Testing.Platform: `global.json` opts `dotnet test` into the platform's runner (the .NET 10 SDK no longer runs Microsoft.Testing.Platform projects through VSTest).
+
 CI (`.github/workflows/ci.yml`) builds the package and the demo, runs the tests, syntax-checks the backoffice modules (and their language files), checks the UI strings and the demo entrypoint. `.github/workflows/e2e.yml` runs the end-to-end test against the real Supertext API and regenerates the docs screenshots (see *End-to-end tests*).
 
 The **runtime** job runs the package on every supported Umbraco line: Umbraco 17.8.1 LTS (with Clean 7.0.8) and 18.3.1 (with Clean 8.0.1). It packs the package as it is published (built against the lowest supported Umbraco, 17.8.0), builds the demo against that package instead of the project (`-p:UmbracoVersion=… -p:CleanVersion=… -p:SupertextPackageVersion=0.0.0-ci -p:RestoreAdditionalProjectSources=<folder>`), starts it fresh with the stand-in API and runs `Tests/Docs/screenshots.mjs` (images to `SCREENSHOTS_OUT`, not committed): the editor translates and publishes *Home* and *Features* through the real backoffice, and the German page must render. It fails on `MissingMethodException` and similar in Umbraco's log: members Umbraco 18 moved only fail at run time. When a new Umbraco line comes out, add it to the matrix.
