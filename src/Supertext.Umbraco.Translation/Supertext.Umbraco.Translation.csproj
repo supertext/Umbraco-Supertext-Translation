@@ -17,7 +17,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Umbraco.Cms.Web.Common" Version="[17.8.1, 19.0.0)" />
-    <PackageReference Include="Umbraco.Cms.Api.Management" Version="[17.8.1, 19.0.0)" />
+    <PackageReference Include="Umbraco.Cms.Api.Management" Version="[18.3.1, 19.0.0)" />
   </ItemGroup>
   <ItemGroup>
     <!-- The Supertext SDK, bundled (namespace Supertext.Umbraco.Translation.Sdk): see lib/supertext-sdk/README.md -->
