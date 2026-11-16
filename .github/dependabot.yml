@@ -7,6 +7,12 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    ignore:
+      # The module references Umbraco as a range ([17.8.1, 19.0.0)), so it already runs on the
+      # next major. A major bump would raise the lower bound and drop the older Umbraco, and
+      # the packages can't be bumped one at a time (NU1107). Widen the range by hand instead.
+      - dependency-name: "Umbraco.Cms*"
+        update-types: ["version-update:semver-major"]
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]

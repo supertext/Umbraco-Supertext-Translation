@@ -287,6 +287,8 @@ Dependabot (`.github/dependabot.yml`) opens weekly pull requests: minor and patc
 
 `.github/workflows/dependabot-merge.yml` merges a minor or patch package update by itself once every other check on its pull request has passed (it waits up to 85 minutes and leaves the pull request alone if a check fails). GitHub Actions updates and majors stay for a person: the workflow's built-in token can't merge changes to workflow files, and a major needs a decision. Merges by the workflow don't start CI on `main`; the weekly health check looks at `main`.
 
+Major updates of the `Umbraco.Cms*` packages are ignored: the module references Umbraco as a version range covering the supported majors, and Dependabot would raise its lower bound (dropping the older Umbraco) one package at a time. To support a new Umbraco major, widen the range in `Supertext.Umbraco.Translation.csproj` and add it to the CI runtime matrix.
+
 ## Releasing
 
 Releases are published by `.github/workflows/release.yml` when the version is officially bumped; nobody tags or creates releases by hand.
