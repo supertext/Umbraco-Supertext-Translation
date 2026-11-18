@@ -10,10 +10,10 @@
     <UmbracoAppLocalIcuVersion Condition="'$(UmbracoAppLocalIcuVersion)' == ''">72.1.0.3</UmbracoAppLocalIcuVersion>
     <!--
       The demo runs the latest Umbraco (18) with Clean 8. CI also builds and runs it on Umbraco 17 LTS
-      (-p:UmbracoVersion=17.8.1 -p:CleanVersion=7.0.8): see docs/DEVELOPER.md -> Tests.
+      (-p:UmbracoVersion=17.8.2 -p:CleanVersion=7.0.8): see docs/DEVELOPER.md -> Tests.
     -->
-    <UmbracoVersion Condition="'$(UmbracoVersion)' == ''">18.3.1</UmbracoVersion>
-    <CleanVersion Condition="'$(CleanVersion)' == ''">8.0.1</CleanVersion>
+    <UmbracoVersion Condition="'$(UmbracoVersion)' == ''">18.3.2</UmbracoVersion>
+    <CleanVersion Condition="'$(CleanVersion)' == ''">8.0.2</CleanVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Clean" Version="$(CleanVersion)" />

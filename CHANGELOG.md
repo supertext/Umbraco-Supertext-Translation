@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Changed: the demo runs Umbraco 18.3.2 with Clean 8.0.2; CI tests Umbraco 17.8.2 and 18.3.2.
+
 ## 1.0.0 — 2026-11-10
 
 First stable release. Every plugin release is now tested end to end against the live Supertext API (`.github/workflows/e2e.yml`).

@@ -44,10 +44,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - umbraco: '17.8.1'
+          - umbraco: '17.8.2'
             clean: '7.0.8'
-          - umbraco: '18.3.1'
-            clean: '8.0.1'
+          - umbraco: '18.3.2'
+            clean: '8.0.2'
     env:
       UMBRACO_VERSION: ${{ matrix.umbraco }}
       CLEAN_VERSION: ${{ matrix.clean }}
