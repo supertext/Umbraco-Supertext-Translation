@@ -68,7 +68,7 @@ export class SupertextSettingsDashboardElement extends UmbLitElement {
     if (!target.code.includes('-u-')) {
       try {
         const lang = typeof this.localize.lang === 'function' ? this.localize.lang() : document.documentElement.lang;
-        const name = new Intl.DisplayNames([lang || 'en'], { type: 'language' }).of(target.code);
+        const name = new Intl.DisplayNames([lang || 'en'], { type: 'language', languageDisplay: 'standard' }).of(target.code);
         if (name && name !== target.code) return name;
       } catch {
         // fall back to Supertext's name

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Changed: language lists name Supertext's languages the way Supertext's own language list does, in the interface language: *German (Switzerland)*, *Deutsch (Schweiz)*, *allemand (Suisse)*, *tedesco (Svizzera)* instead of *Swiss High German*, *Schweizer Hochdeutsch*, *allemand suisse*, *alto tedesco svizzero* (likewise *French (Switzerland)*, *English (United States)* …).
 - Changed: the demo runs Umbraco 18.3.2 with Clean 8.0.2; CI tests Umbraco 17.8.2 and 18.3.2.
 
 ## 1.0.0 — 2026-11-10

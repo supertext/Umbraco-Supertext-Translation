@@ -148,14 +148,14 @@ await kit.say('Click Check API key. The connection to Supertext works.', {
 // 4. Language mapping.
 const languages = page.locator('supertext-settings-dashboard uui-box').nth(1);
 const german = languages.locator('select').nth(1);
-await kit.say('Under Languages, each Umbraco language gets a Supertext language. German is set to Swiss High German. Pick another one if you need it.', {
+await kit.say('Under Languages, each Umbraco language gets a Supertext language. German is set to German (Switzerland). Pick another one if you need it.', {
 	caption: '<b>Languages</b>: a Supertext language for each language',
 	during: async () => {
 		await languages.evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'smooth' }));
 		await page.waitForTimeout(900);
 		await kit.moveTo(german);
 		await page.evaluate(([x, y]) => window.__stk?.ripple(x, y), [kit.cursor.x, kit.cursor.y]);
-		await german.selectOption({ label: 'Swiss High German (de-CH)' });
+		await german.selectOption({ label: 'German (Switzerland) (de-CH)' });
 	},
 });
 await kit.say('Translation review can be ticked for each language. Leave it off for now.', {

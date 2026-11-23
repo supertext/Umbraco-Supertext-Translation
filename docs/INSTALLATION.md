@@ -70,7 +70,7 @@ Turning on *Vary by culture* for a document type that already has content moves 
 
 4. **Supertext language per Umbraco language:** **Settings › Supertext**, box *Languages*. Every Umbraco language has a combo box with Supertext's languages (shown as *name (code)*, the names in your backoffice language), where Supertext offers it a *Formal/informal* choice, and a **Translation review** checkbox (see [Translation review](#translation-review)). Choose and click **Save**; the choice applies to the next translation, no restart needed. It is stored in Umbraco's database (`umbracoKeyValue`, key `Supertext.Umbraco.Translation.Languages`).
 
-   ![Settings › Supertext, box Languages: a combo box per Umbraco language (American English (en-US), Swiss High German (de-CH), Swiss French (fr-CH), Italian (Switzerland) (it-CH), each marked "same code"), formal address chosen for German, French and Italian, English without a formal/informal choice, a Translation review checkbox per language (none ticked) with its explanation below the table, and the Save button](images/supertext-languages.png)
+   ![Settings › Supertext, box Languages: a combo box per Umbraco language (English (United States) (en-US), German (Switzerland) (de-CH), French (Switzerland) (fr-CH), Italian (Switzerland) (it-CH), each marked "same code"), formal address chosen for German, French and Italian, English without a formal/informal choice, a Translation review checkbox per language (none ticked) with its explanation below the table, and the Save button](images/supertext-languages.png)
 
    Supertext accepts exactly these target codes (from its language list, October 2026); the combo box offers exactly these:
 
