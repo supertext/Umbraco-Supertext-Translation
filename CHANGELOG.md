@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added: **Send configuration to Supertext** on the *Settings › Supertext* dashboard (administrators): sends Supertext the installed packages (name, version) and the Supertext language of each Umbraco language, so Supertext support can help better. Nothing is sent while version reports are off. All four interface languages. Supertext Plugin Health 0.4.0.
+- Changed: the screenshots in the guides show real Supertext translations (the E2E workflow takes them with the live API; version reports still go to the stand-in).
 - Changed: language lists name Supertext's languages the way Supertext's own language list does, in the interface language: *German (Switzerland)*, *Deutsch (Schweiz)*, *allemand (Suisse)*, *tedesco (Svizzera)* instead of *Swiss High German*, *Schweizer Hochdeutsch*, *allemand suisse*, *alto tedesco svizzero* (likewise *French (Switzerland)*, *English (United States)* …).
 - Changed: the demo runs Umbraco 18.3.2 with Clean 8.0.2; CI tests Umbraco 17.8.2 and 18.3.2.
 

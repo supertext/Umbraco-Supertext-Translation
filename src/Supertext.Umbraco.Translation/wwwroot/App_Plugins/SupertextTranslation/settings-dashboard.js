@@ -19,6 +19,8 @@ export class SupertextSettingsDashboardElement extends UmbLitElement {
     _rows: { state: true },
     _saving: { state: true },
     _saveMessage: { state: true },
+    _sending: { state: true },
+    _configMessage: { state: true },
   };
 
   constructor() {
@@ -114,6 +116,22 @@ export class SupertextSettingsDashboardElement extends UmbLitElement {
     this._check = data;
   }
 
+  async _sendConfiguration() {
+    this._sending = true;
+    this._configMessage = undefined;
+    const { data, error } = await umbHttpClient.post({ url: `${API}/send-configuration`, security: AUTH });
+    this._sending = false;
+    if (error || !data) {
+      this._configMessage = { ok: false, text: this.localize.term('supertext_configFailed') };
+      return;
+    }
+    this._configMessage = data.reportsOff
+      ? { ok: false, text: this.localize.term('supertext_configOff') }
+      : data.sent
+        ? { ok: true, text: this.localize.term('supertext_configSent', data.extensions, data.languages) }
+        : { ok: false, text: this.localize.term('supertext_configFailed') };
+  }
+
   _when(iso) {
     const date = new Date(iso);
     return Number.isNaN(date.getTime()) ? iso : this.localize.date(date, { dateStyle: 'medium', timeStyle: 'short' });
@@ -168,6 +186,18 @@ export class SupertextSettingsDashboardElement extends UmbLitElement {
             ${s.reports.pingUrl
               ? html`<div class="hint">${this.localize.term('supertext_pingUrl')} <code>${s.reports.pingUrl}</code></div>`
               : nothing}
+            <div class="supertext-send-config">
+              <uui-button
+                look="secondary"
+                label=${this.localize.term('supertext_sendConfig')}
+                .state=${this._sending ? 'waiting' : undefined}
+                ?disabled=${this._sending}
+                @click=${this._sendConfiguration}></uui-button>
+              <div class="hint">${this.localize.term('supertext_sendConfigHelp')}</div>
+              ${this._configMessage
+                ? html`<div class=${this._configMessage.ok ? 'ok' : 'fail'}>${this._configMessage.text}</div>`
+                : nothing}
+            </div>
           </dd>
         </dl>
       </uui-box>

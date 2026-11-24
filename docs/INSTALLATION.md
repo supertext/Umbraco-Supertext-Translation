@@ -165,6 +165,8 @@ It never contains content, the API key or personal data. Reports are sent from t
 
 **Turn it off** with `"Supertext": { "SendVersionReports": false }` in appsettings.json, or the environment variable `SUPERTEXT_VERSION_REPORTS=0` (it wins over the setting; `1` turns reports on). Off means nothing is sent and the ping route answers 404. The API key check keeps working either way. **Settings › Supertext** shows whether reports are on.
 
+**Send configuration to Supertext** (*Settings › Supertext*, administrators only) sends Supertext, on demand, the packages installed in Umbraco (name, version) and the Supertext language of each Umbraco language, so Supertext support can help with a setup question. It sends nothing else, and only while reports are on; the dashboard then says how many packages and languages were sent.
+
 **Ping route.** While reports are on, Supertext checks that the site is reachable with `GET /umbraco/supertext/ping?challenge=…`: a public route (no login) that only echoes the challenge (`{"ok":true,"plugin":"Umbraco-Supertext-Translation","challenge":"…"}`, `Cache-Control: no-store`). If a firewall, a CDN rule or IP restriction protects `/umbraco`, allow `GET /umbraco/supertext/ping` or Supertext will show the site as unreachable; nothing else depends on it.
 
 ## All settings

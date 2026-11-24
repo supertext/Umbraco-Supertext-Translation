@@ -112,7 +112,8 @@ public sealed class SupertextReporting(
     /// <summary>The absolute URL of the ping route for a site URL.</summary>
     public static string PingUrl(string siteUrl) => siteUrl.TrimEnd('/') + "/" + PingPath;
 
-    public InstallationReporter Reporter(string siteUrl)
+    /// <param name="languages">The language mapping, for <see cref="SendConfigurationAsync"/> only.</param>
+    public InstallationReporter Reporter(string siteUrl, IReadOnlyList<PluginHealth.LanguageMapping>? languages = null)
     {
         var clientOptions = clients.ClientOptions(Clock);
         return new(new ReporterOptions
@@ -133,7 +134,37 @@ public sealed class SupertextReporting(
             ReportUrl = ReportUrl,
             HttpClient = ReportHttpClient ?? clientOptions.HttpClient,
             TimeProvider = Clock,
+            Languages = languages is null ? null : () => languages,
         });
+    }
+
+    /// <summary>
+    /// "Send configuration to Supertext" (Settings → Supertext, administrators): one <c>extensions</c> report with
+    /// the installed packages and the language mapping, sent now (also within the hour after a failed report).
+    /// Nothing with reports off or without a site URL. Never throws.
+    /// </summary>
+    public async Task<ReporterResult?> SendConfigurationAsync(string? siteUrl, IEnumerable<Extension> extensions, IReadOnlyList<PluginHealth.LanguageMapping> languages)
+    {
+        if (siteUrl is null)
+        {
+            return null;
+        }
+        await _gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            var result = await Reporter(siteUrl, languages).SendExtensionsAsync(store.Load(), extensions).ConfigureAwait(false);
+            store.Save(result.State);
+            return result;
+        }
+        catch (Exception e)
+        {
+            logger.LogDebug(e, "Supertext: configuration not sent.");
+            return null;
+        }
+        finally
+        {
+            _gate.Release();
+        }
     }
 
     /// <summary>Runs one reporter action with the stored state and stores the result. One at a time; never throws.</summary>

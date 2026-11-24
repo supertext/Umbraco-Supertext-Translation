@@ -189,12 +189,42 @@ public class ReportingTests
         var stored = "{\"reportedVersions\":\"1.2.3|17.7.1|" + Environment.Version + "\",\"reportedKeyStatus\":\"ok\",\"lastFailureAt\":null,"
             + "\"keyCheck\":{\"status\":\"ok\",\"checkedAt\":\"2026-10-14T09:00:00Z\",\"httpStatus\":200,\"errorCode\":null,\"fingerprint\":\"" + ApiKeyCheck.FingerprintOf("test-key") + "\"}}";
         var (reporting, http, store) = Create(store: new MemoryStateStore { Json = stored });
-        Assert.Equal(stored, store.Load().ToJson());
+        // Plugin Health 0.2+ adds keyChecks and reportedKeyStatuses (null with one key); everything else is kept.
+        Assert.Equal(stored[..^1] + ",\"keyChecks\":null,\"reportedKeyStatuses\":null}", store.Load().ToJson());
 
         var result = await reporting.RunAsync(ReportAction.OnRequest, Site);
         Assert.Null(result?.Event);
         Assert.Empty(http.Reports);
         Assert.Equal(0, http.KeyChecks);
+    }
+
+    [Fact]
+    public async Task SendConfigurationSendsPackagesAndTheLanguageMapping()
+    {
+        var (reporting, http, _) = Create();
+        Extension[] packages = [new("uSync", "17.0.2", true, "package")];
+        PluginHealth.LanguageMapping[] languages = [new("en-US", "en-US"), new("de-CH", "de-CH"), new("en-IE", null)];
+
+        var result = await reporting.SendConfigurationAsync(Site, packages, languages);
+
+        Assert.Equal(ReportEvents.Extensions, result?.Event);
+        Assert.True(result!.Sent);
+        var report = Assert.Single(http.Reports);
+        Assert.Equal("extensions", report["event"]!.GetValue<string>());
+        Assert.Equal("uSync", report["extensions"]![0]!["name"]!.GetValue<string>());
+        Assert.Equal("de-CH", report["languages"]![1]!["supertext"]!.GetValue<string>());
+        Assert.Null(report["languages"]![2]!["supertext"]);
+        Assert.Equal(0, http.KeyChecks);
+    }
+
+    [Fact]
+    public async Task SendConfigurationSendsNothingWithReportsOff()
+    {
+        var (reporting, http, _) = Create(reports: false);
+        var result = await reporting.SendConfigurationAsync(Site, [new("uSync")], [new("de-CH", "de-CH")]);
+
+        Assert.False(result?.Sent ?? false);
+        Assert.Empty(http.Reports);
     }
 
     [Fact]

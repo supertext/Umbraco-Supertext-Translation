@@ -91,6 +91,11 @@ export default {
       'Envoie à Supertext l’URL du site ainsi que les versions de ce package, d’Umbraco et de l’environnement d’exécution après une mise à jour et lorsque la clé API change. Le support Supertext voit ainsi quelle version vous utilisez. Aucun contenu, aucune clé API et aucune donnée personnelle ne sont transmis.',
     reportsHow: 'Pour le désactiver, définissez Supertext:SendVersionReports sur false dans appsettings.json ou la variable d’environnement SUPERTEXT_VERSION_REPORTS=0.',
     pingUrl: 'Supertext vérifie que le site est joignable à l’adresse',
+    sendConfig: 'Envoyer la configuration à Supertext',
+    sendConfigHelp: 'Envoie à Supertext les paquets installés dans Umbraco (nom, version) et la langue Supertext de chaque langue Umbraco, afin que le support Supertext puisse mieux vous aider. Rien d’autre n’est envoyé. Réservé aux administrateurs.',
+    configSent: (extensions, languages) => `Envoyé : ${extensions} paquets, ${languages} langues.`,
+    configFailed: 'La configuration n’a pas pu être envoyée. Veuillez réessayer plus tard.',
+    configOff: 'Les informations de version sont désactivées (Supertext:SendVersionReports ou SUPERTEXT_VERSION_REPORTS) : rien n’a été envoyé.',
     languagesHeadline: 'Langues',
     languagesHint:
       'Choisissez la langue Supertext de chaque langue Umbraco ; elle sert aussi lorsque la langue est la langue source. Est présélectionnée la langue Supertext correspondante ou la langue usuelle (fr → français (France)) ; choisissez-en une autre si nécessaire, p. ex. français (Suisse). « — choisir — » : Supertext n’a pas de langue usuelle pour cette langue, choisissez-en une avant de traduire. Les entrées sous Supertext:Languages dans appsettings.json l’emportent sur cette page.',

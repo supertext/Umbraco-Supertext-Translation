@@ -14,6 +14,7 @@ using Umbraco.Cms.Api.Management.Routing;
 using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Web.Common.Authorization;
+using LanguageMapping = Supertext.Umbraco.Translation.Services.LanguageMapping;
 
 namespace Supertext.Umbraco.Translation.Controllers;
 
@@ -31,6 +32,7 @@ public sealed partial class SupertextSettingsController(
     SupertextClientFactory clients,
     SupertextReporting reporting,
     ILanguageService languageService,
+    IPackagingService packagingService,
     LanguageSettingsProvider languageSettings,
     IOptionsMonitor<WebRoutingSettings> webRouting) : ManagementApiControllerBase
 {
@@ -148,6 +150,48 @@ public sealed partial class SupertextSettingsController(
         }
         var sdkCheck = await clients.Create().CheckApiKeyAsync(ct);
         return Ok(new KeyCheckModel(sdkCheck.Status, sdkCheck.CheckedAt, sdkCheck.HttpStatus, sdkCheck.ErrorCode));
+    }
+
+    /// <summary>The answer of "Send configuration to Supertext": sent or not, and how much.</summary>
+    public sealed record SendConfigurationModel(bool Sent, bool ReportsOff, int Extensions, int Languages);
+
+    /// <summary>
+    /// "Send configuration to Supertext" (administrators): the installed packages and every Umbraco language with
+    /// its Supertext code, in one <c>extensions</c> report. Nothing while version reports are off.
+    /// </summary>
+    [HttpPost("settings/send-configuration")]
+    [Authorize(Policy = AuthorizationPolicies.RequireAdminAccess)]
+    [ProducesResponseType<SendConfigurationModel>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> SendConfiguration()
+    {
+        var extensions = new List<PluginHealth.Extension>();
+        try
+        {
+            foreach (var package in await packagingService.GetAllInstalledPackagesAsync())
+            {
+                if (!string.IsNullOrEmpty(package.PackageName))
+                {
+                    extensions.Add(new PluginHealth.Extension(package.PackageName, string.IsNullOrEmpty(package.Version) ? null : package.Version, true, "package"));
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // A report without packages still has the languages.
+        }
+        extensions = [.. extensions.DistinctBy(e => e.Name).OrderBy(e => e.Name, StringComparer.Ordinal)];
+        var settings = languageSettings.Current();
+        var languages = (await languageService.GetAllAsync()).Select(l =>
+        {
+            var r = LanguageMapping.Resolve(l.IsoCode, settings);
+            return new PluginHealth.LanguageMapping(l.IsoCode, r.Mapped ? r.Code : null);
+        }).ToList();
+        if (!reporting.Enabled)
+        {
+            return Ok(new SendConfigurationModel(false, true, extensions.Count, languages.Count));
+        }
+        var result = await reporting.SendConfigurationAsync(SiteUrl(), extensions, languages);
+        return Ok(new SendConfigurationModel(result?.Sent == true, false, extensions.Count, languages.Count));
     }
 
     private ReportsModel Reports(string? siteUrl) =>

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * Regenerates docs/images from a freshly started local Umbraco demo whose package talks to
- * stand-in.mjs (SUPERTEXT_API_ENDPOINT=http://127.0.0.1:8765/v1/), so the German texts are
- * real translations from sample-de.json. See docs/DEVELOPER.md -> Docs screenshots.
+ * Regenerates docs/images from a freshly started local Umbraco demo whose package talks to the
+ * real Supertext API (CI: SUPERTEXT_API_KEY) or, without a key, to stand-in.mjs
+ * (SUPERTEXT_API_ENDPOINT=http://127.0.0.1:8765/v1/), whose German texts are real translations
+ * from sample-de.json. See docs/DEVELOPER.md -> Docs screenshots.
  *
  *   BASE_URL (default http://127.0.0.1:8095)
  *   DEMO_EDITOR_EMAIL / DEMO_EDITOR_PASSWORD  editor account (translates and publishes)
@@ -78,7 +79,7 @@ async function translateAndPublishGerman(page, germanName) {
     await page.locator('uui-checkbox').filter({ hasText: name }).first().click();
   }
   await page.getByRole('button', { name: 'Translate', exact: true }).click();
-  await page.getByText('Translated with Supertext').first().waitFor({ timeout: 120000 });
+  await page.getByText('Translated with Supertext').first().waitFor({ timeout: 300000 });
   await page.waitForTimeout(1500);
   await switchToGerman(page, germanName); // the publish dialog preselects the open language
   await publishGerman(page);
@@ -146,7 +147,7 @@ for (const name of ['French (Switzerland)', 'Italian (Switzerland)']) {
   await page.locator('uui-checkbox').filter({ hasText: name }).first().click();
 }
 await page.getByRole('button', { name: 'Translate', exact: true }).click();
-await page.getByText('Translated with Supertext').first().waitFor({ timeout: 120000 });
+await page.getByText('Translated with Supertext').first().waitFor({ timeout: 300000 });
 await page.waitForTimeout(800);
 {
   // The toast lives in shadow DOM; crop around its headline.
