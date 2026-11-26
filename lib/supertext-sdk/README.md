@@ -1,7 +1,7 @@
 # Supertext SDK (bundled copy)
 
 .NET part of the [Supertext SDK](https://github.com/Supertext/Supertext-API-SDK-Guide),
-version 0.5.0, commit `a47ca0765fc568f02acf81f1d36293fc05c11d48`, namespace `Supertext.Umbraco.Translation.Sdk` instead of `Supertext.Sdk`
+version 0.7.0, commit `1438aea76d25d90b19e12b60ac91375efaa137c3`, namespace `Supertext.Umbraco.Translation.Sdk` instead of `Supertext.Sdk`
 (the API v1 classes in `Supertext.Umbraco.Translation.Sdk.V1`, folder `src/V1/`).
 Compiled into Supertext.Umbraco.Translation.dll (see the package's `.csproj`).
 
